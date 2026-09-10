@@ -2,12 +2,14 @@
 export class FrameJourney {
   constructor(host, segments) {
     this.segments = segments;
+    this.assetVersion = 'delivery-1080-v1';
     this.count = segments.reduce((sum, segment) => sum + segment.count, 0);
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'journey-video';
     this.canvas.setAttribute('aria-hidden', 'true');
-    this.context = this.canvas.getContext('2d', { alpha: false });
+    this.context = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
     if (!this.context) throw new Error('Canvas unavailable');
+    this.context.imageSmoothingQuality = 'medium';
     this.cache = new Map();
     this.pending = new Map();
     this.failed = new Set();
@@ -47,13 +49,15 @@ export class FrameJourney {
   }
   url(index) {
     for (const segment of this.segments) {
-      if (index < segment.count) return `${segment.path}/${String(index).padStart(3, '0')}.jpg`;
+      if (index < segment.count) return `${segment.path}/${String(index).padStart(3, '0')}.jpg?v=${this.assetVersion}`;
       index -= segment.count;
     }
   }
   resize() {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    const ratio = Math.min(1, 3840 / (innerWidth * dpr), 2160 / (innerHeight * dpr));
+    // The delivery frames are 1080p. Capping the backing store avoids painting a
+    // 4K canvas on Retina screens when the source cannot add more detail.
+    const dpr = Math.min(devicePixelRatio || 1, 1.25);
+    const ratio = Math.min(1, 1920 / (innerWidth * dpr), 1080 / (innerHeight * dpr));
     this.canvas.width = Math.round(innerWidth * dpr * ratio);
     this.canvas.height = Math.round(innerHeight * dpr * ratio);
     this.displayed = -1;
@@ -102,26 +106,27 @@ export class FrameJourney {
   }
   pump() {
     if (this.paused || this.disposed || document.hidden) return;
-    const wanted = [this.target, this.target + 1, this.target - 1, this.target + 2]
+    const direction = this.target >= this.displayed ? 1 : -1;
+    const wanted = [this.target, this.target + direction, this.target + direction * 2, this.target - direction]
       .filter(index => index >= 0 && index < this.count);
     for (const [index, controller] of this.pending) {
-      if (Math.abs(index - this.target) > 244) controller.abort();
+      if (Math.abs(index - this.target) > 10) controller.abort();
     }
     for (const index of wanted) {
-      if (this.pending.size >= 2) break;
+      if (this.pending.size >= 3) break;
       if (this.cache.has(index) || this.pending.has(index) || this.failed.has(index)) continue;
       const controller = new AbortController();
       this.pending.set(index, controller);
-      fetch(this.url(index), { signal: controller.signal })
+      fetch(this.url(index), { signal: controller.signal, cache: 'force-cache' })
         .then(response => { if (!response.ok) throw new Error('Frame unavailable'); return response.blob(); })
         .then(blob => createImageBitmap(blob))
         .then(bitmap => {
-          if (this.disposed || controller.signal.aborted || Math.abs(index - this.target) > 24) {
+          if (this.disposed || controller.signal.aborted || Math.abs(index - this.target) > 12) {
             bitmap.close(); return;
           }
           this.cache.set(index, bitmap);
           const farthest = [...this.cache.keys()].sort((a, b) => Math.abs(b - this.target) - Math.abs(a - this.target));
-          while (this.cache.size > 4) {
+          while (this.cache.size > 6) {
             const victim = farthest.shift();
             this.cache.get(victim).close(); this.cache.delete(victim);
           }

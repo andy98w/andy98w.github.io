@@ -50,7 +50,7 @@ The live `villa-workshop-trimmed.mp4` and `villa-workshop-trimmed-mobile.mp4` re
 
 ## Full enhanced frame sequence
 
-`journey-frames/courtyard` reuses the enhanced courtyard. `journey-frames/approach` retains only the first 36 frames of the previously enhanced original workshop. `journey-frames/desk` comes from task `9940d489-6761-4b7d-ae65-0b869ada2d68`, enhancing the approved replacement entrance and desk clips. All 423 source JPEGs are 3840×2160. Live playback now uses these frames; historical MP4 variants are retained but not loaded.
+`journey-frames/courtyard` reuses the enhanced courtyard. `journey-frames/approach` retains only the first 36 frames of the previously enhanced original workshop. `journey-frames/desk` comes from task `9940d489-6761-4b7d-ae65-0b869ada2d68`, enhancing the approved replacement entrance and desk clips. The 423 live delivery JPEGs are 1920×1080 quality-optimized derivatives of the 3840×2160 masters. This reduces the deployed sequence from roughly 353 MB to 79 MB and lowers decode and canvas-paint cost on high-density displays. Historical MP4 variants are retained but not loaded.
 
 ## Project architecture diagrams
 
