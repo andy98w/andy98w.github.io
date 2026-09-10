@@ -1,0 +1,336 @@
+[
+  {
+    "id": "kubevista",
+    "name": "KubeVista",
+    "category": "Cloud infrastructure",
+    "tags": [
+      "Go",
+      "React",
+      "Kubernetes",
+      "Terraform"
+    ],
+    "image": "kubevista-dashboard.webp",
+    "alt": "KubeVista operations console showing its validated deployment snapshot",
+    "icon": "kubernetes.svg",
+    "summary": "A read-only Kubernetes console, backed by an EKS platform I built and tested on AWS.",
+    "detail": "I built the Go API and React dashboard, then the platform around them: networking, identity, GitOps, telemetry, and failure tests. The API can inspect workloads, but cannot change them or read Secrets.",
+    "bullets": [
+      "Terraform provisions the environment across three AWS availability zones.",
+      "Twelve Argo CD applications reported Synced and Healthy during the AWS run.",
+      "GitHub Actions uses OIDC, signed images, vulnerability scans, and SBOMs.",
+      "All 896 requests returned HTTP 200 during a two-second API pod replacement."
+    ],
+    "note": "Screenshot from the representative demo. The paid AWS deployment has been intentionally taken down.",
+    "ownership": {
+      "role": "Solo builder",
+      "scope": "Product, Go API, React interface, AWS platform, delivery, and operations",
+      "status": "Recorded demo; paid AWS environment retired"
+    },
+    "architecture": {
+      "diagram": "architecture-kubevista.svg",
+      "alt": "KubeVista architecture from GitHub Actions through Argo CD into a private EKS node group, with AWS ingress, pod identity, secrets, and an observability stack",
+      "caption": "The representative AWS deployment: one EKS cluster, private workers, GitOps delivery, and a deliberately read-only dashboard API.",
+      "how": "Terraform builds the VPC, EKS control plane, managed node group, KMS keys, and AWS integrations. GitHub Actions publishes a scanned and signed image; Argo CD reconciles the manifests. Traffic enters through an AWS load balancer, while the Go API reads Kubernetes inventory under a restricted service account and emits telemetry through OpenTelemetry.",
+      "decisions": [
+        "Workers stay private; one NAT gateway reduced demo cost, accepting an Availability Zone dependency that a long-running production setup would remove.",
+        "EKS Pod Identity and External Secrets replace long-lived AWS credentials inside pods.",
+        "The dashboard has read-only RBAC and cannot read Secrets, turning the product boundary into a security control."
+      ],
+      "caseStudy": {
+        "title": "A controlled pod replacement",
+        "intro": "I used the dashboard as a real workload, kept the temporary AWS footprint cost-aware, and checked whether the platform controls behaved together under a small failure.",
+        "steps": [
+          {
+            "title": "Provision",
+            "text": "Terraform created the three-AZ VPC, EKS cluster, private worker subnets, identity, and integrations."
+          },
+          {
+            "title": "Deliver",
+            "text": "GitHub Actions published a scanned and signed release; Argo CD reconciled 12 healthy applications."
+          },
+          {
+            "title": "Disrupt",
+            "text": "Fortio sent traffic while a running API pod was deliberately removed."
+          },
+          {
+            "title": "Verify",
+            "text": "The replacement became ready in two seconds and all 896 requests returned HTTP 200."
+          },
+          {
+            "title": "Retire",
+            "text": "I destroyed the paid environment and audited DNS, volumes, load balancers, and tagged AWS resources for leftovers."
+          }
+        ],
+        "links": [
+          {
+            "label": "Architecture",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/architecture.md"
+          },
+          {
+            "label": "Live run",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/live-eks-2026-08-31.md"
+          },
+          {
+            "label": "Failure test",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/controlled-disruption-case-study.md"
+          },
+          {
+            "label": "Teardown audit",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/teardown-2026-08-31.md"
+          }
+        ]
+      },
+      "outcomeLabel": "Live test",
+      "outcome": "Twelve Argo CD applications were Synced and Healthy, and all 896 requests returned HTTP 200 while an API pod was replaced. The paid AWS environment was then torn down and checked for leftovers."
+    },
+    "url": "https://github.com/andy98w/Kubernetes-Dashboard",
+    "action": "View source",
+    "featured": true
+  },
+  {
+    "id": "illuma",
+    "name": "Illuma",
+    "category": "AI & education",
+    "tags": [
+      "Multi-agent AI",
+      "Python",
+      "XGBoost"
+    ],
+    "image": "illuma-homepage.webp",
+    "alt": "Illuma college admissions platform homepage",
+    "icon": "illuma-logo.png",
+    "summary": "A college admissions platform for researching schools, reviewing essays, and building a college list.",
+    "detail": "I founded Illuma and built its AI tools and admissions probability model. The tools share state and validate their outputs before passing results to the next step.",
+    "bullets": [
+      "39 typed tools with shared state and deterministic validation.",
+      "Admissions modeling across 130 universities.",
+      "79,000 applicant outcomes underpin the platform.",
+      "Grew to more than 5,000 users."
+    ],
+    "note": "Product figures are from my September 2026 r\u00e9sum\u00e9.",
+    "ownership": {
+      "role": "Founder and lead engineer",
+      "scope": "Product direction, agent system, admissions model, and platform implementation",
+      "status": "Live product"
+    },
+    "architecture": {
+      "diagram": "architecture-illuma.svg",
+      "alt": "Illuma architecture showing a student workspace, an agent coordinator, research and writing tools, shared state and validation, and admissions data and prediction services",
+      "caption": "A coordinated tool system: each specialist works against the same student context instead of producing isolated chat responses.",
+      "how": "A student request enters a coordinator that selects typed tools for school research, college-list planning, or essay review. Every tool reads and updates shared application state, and deterministic checks gate what can move to the next step. The prediction path combines a student profile with historical applicant outcomes and university data.",
+      "decisions": [
+        "Typed tool inputs and outputs make handoffs inspectable and reject malformed results early.",
+        "Shared state keeps recommendations consistent across research, essays, and the evolving college list.",
+        "Admissions prediction is kept as a separate data pipeline rather than hidden inside an unconstrained language-model answer."
+      ],
+      "outcomeLabel": "Scale",
+      "outcome": "The product grew to more than 5,000 users, with 39 typed tools and admissions modeling across 130 universities using 79,000 applicant outcomes."
+    },
+    "url": "https://www.illuma.me/",
+    "action": "Visit site",
+    "linkType": "live",
+    "featured": true
+  },
+  {
+    "id": "ledgly",
+    "name": "Ledgly",
+    "category": "Product engineering",
+    "tags": [
+      "Next.js",
+      "NestJS",
+      "PostgreSQL"
+    ],
+    "image": "ledgly-dashboard.webp",
+    "alt": "Ledgly financial dashboard with charges, payments, and membership balances",
+    "icon": "ledgly-logo.webp",
+    "summary": "A shared ledger that helps club treasurers match payment emails to dues. Fewer spreadsheet detective stories.",
+    "detail": "I built the member ledger, payment reconciliation, and review workflow. Charges, payments, expenses, and allocations are separate records, so partial payments and split allocations have somewhere sensible to go.",
+    "bullets": [
+      "Gmail ingestion matches payment notices to members and records confidence for review.",
+      "Organization-scoped roles are enforced by the API.",
+      "The assistant proposes financial changes for confirmation before executing them.",
+      "Before-and-after audit records support batch undo and redo."
+    ],
+    "note": "Dashboard image from the project repository.",
+    "ownership": {
+      "role": "Solo full-stack engineer",
+      "scope": "Architecture, ledger model, reconciliation, permissions, and audit workflow",
+      "status": "Source available; public deployment protected"
+    },
+    "architecture": {
+      "diagram": "architecture-ledgly.svg",
+      "alt": "Ledgly architecture showing the Next.js interface, NestJS API, PostgreSQL ledger, Gmail ingestion, and a review gate before financial records are changed",
+      "caption": "Incoming payment email becomes a proposed ledger match, not an automatic financial fact.",
+      "how": "The Next.js client calls an organization-scoped NestJS API backed by Prisma and PostgreSQL. A Gmail worker reads payment notices, extracts candidate transactions, and proposes member matches with confidence. Treasurers review ambiguous matches before payments are allocated to charges; the API records the before-and-after state in the audit log.",
+      "decisions": [
+        "Charges, payments, expenses, and allocations are separate records so partial and split payments remain representable.",
+        "Gmail is read-only, and low-confidence matches stop at a human review queue.",
+        "AI write tools require confirmation and use the same role checks and audit path as ordinary API actions."
+      ],
+      "outcomeLabel": "Tradeoff",
+      "outcome": "The extra review step gives up fully automatic reconciliation in exchange for traceable financial changes, reversible batches, and fewer silent misallocations."
+    },
+    "url": "https://github.com/andy98w/Ledgly",
+    "action": "View source",
+    "featured": true
+  },
+  {
+    "id": "sizzle",
+    "name": "Sizzle",
+    "category": "Creative tools",
+    "tags": [
+      "Next.js",
+      "FastAPI",
+      "Matter.js"
+    ],
+    "icon": "sizzle-logo.png",
+    "summary": "Recipes with an interactive kitchen counter. The ingredients have actual physics.",
+    "detail": "A dish name or a few ingredients become a saved recipe and a step-by-step cooking view. I built structured recipe generation, background illustration jobs, and the Matter.js counter.",
+    "bullets": [
+      "Structured ingredients, equipment, and steps drive the interface.",
+      "Matter.js handles gravity, collisions, and ingredient placement.",
+      "Supabase stores recipes; OCI Object Storage holds the generated step illustrations."
+    ],
+    "ownership": {
+      "role": "Solo builder",
+      "scope": "Recipe pipeline, FastAPI service, interactive cooking view, and OCI deployment",
+      "status": "Source available"
+    },
+    "architecture": {
+      "diagram": "architecture-sizzle.svg",
+      "alt": "Sizzle pipeline from a dish or ingredient prompt through recipe lookup and structured generation to Supabase, image jobs, OCI Object Storage, and a Matter.js cooking view",
+      "caption": "The recipe is usable before the slower illustration jobs finish.",
+      "how": "A natural-language request first searches saved recipes. If nothing fits, FastAPI creates structured ingredients, equipment, and steps, persists them in Supabase, and starts illustration work in the background. The Next.js cooking view renders each step and uses Matter.js to place the relevant objects on a virtual counter.",
+      "decisions": [
+        "Recipe generation produces a fixed structure so the interface does not have to parse prose.",
+        "Image work runs after the recipe is saved, keeping the main request independent of slower media generation.",
+        "Matter.js owns placement and collision behavior while React owns the recipe and step state."
+      ],
+      "outcomeLabel": "Tradeoff",
+      "outcome": "A recipe can still load when image generation or object storage fails; the cost is accepting partially illustrated recipes and reporting those jobs separately."
+    },
+    "url": "https://github.com/andy98w/Sizzle",
+    "action": "View source"
+  },
+  {
+    "id": "academis",
+    "name": "Academis",
+    "category": "AI & education",
+    "tags": [
+      "React",
+      "FastAPI",
+      "RAG"
+    ],
+    "icon": "academis-logo.png",
+    "summary": "An AP study app that answers questions from the selected course material.",
+    "detail": "I built subject-scoped retrieval and a study interface for textbooks, questions, quizzes, and graphs. Microeconomics and Macroeconomics are the most complete courses; science content is partial.",
+    "bullets": [
+      "PDF extraction, chunking, and embeddings feed MongoDB Atlas Vector Search.",
+      "FastAPI separates tutoring, retrieval, quiz generation, and graph generation.",
+      "Firebase Authentication protects student routes."
+    ],
+    "ownership": {
+      "role": "Solo builder",
+      "scope": "Document ingestion, retrieval, tutoring API, and study interface",
+      "status": "Local demo and source available"
+    },
+    "architecture": {
+      "diagram": "architecture-academis.svg",
+      "alt": "Academis retrieval architecture showing PDF ingestion into subject-tagged chunks and MongoDB Atlas Vector Search, then a student question retrieving context for answer generation",
+      "caption": "Ingestion and question answering meet at the subject-scoped vector index.",
+      "how": "An upload script extracts textbook PDFs, splits them into chunks, creates embeddings, and stores subject metadata with each record in MongoDB Atlas. At question time, FastAPI searches only the selected course, assembles the closest passages, and sends that context into the tutoring answer path used by the React interface.",
+      "decisions": [
+        "Subject metadata constrains retrieval so a macroeconomics answer cannot silently borrow biology context.",
+        "Ingestion is a separate command-line pipeline, keeping expensive document processing out of student requests.",
+        "Tutoring, quizzes, graphs, and textbook routes remain separate FastAPI modules even though they share course data."
+      ],
+      "outcomeLabel": "Scope",
+      "outcome": "Microeconomics and Macroeconomics have the most complete material. Science course shells remain visible but are described as partial rather than overstated as finished."
+    },
+    "url": "https://github.com/andy98w/Academis",
+    "action": "View source"
+  },
+  {
+    "id": "filmvault",
+    "name": "FilmVault",
+    "category": "Product engineering",
+    "tags": [
+      "React",
+      "Express",
+      "OCI"
+    ],
+    "icon": "filmvault.webp",
+    "video": "filmvault-demo.mp4",
+    "poster": "filmvault-demo.jpg",
+    "videoAlt": "FilmVault demo showing live movie data, people browsing, member picks, ratings, and saved collections",
+    "summary": "Films, television, ratings, and saved collections\u2014with live catalog data from TMDB.",
+    "detail": "I built the original FilmVault before using generative-AI coding tools, and have since revisited the interface and local setup. TMDB supplies catalog data; the app owns accounts, ratings, and collections.",
+    "bullets": [
+      "Express combines TMDB search and recommendations with member-owned data.",
+      "Registration, email verification, password recovery, and JWT authorization.",
+      "MySQL in the original design, plus SQLite for repeatable local demos.",
+      "Terraform defines the original OCI infrastructure, including networking, secrets, and access controls."
+    ],
+    "ownership": {
+      "role": "Solo full-stack engineer",
+      "scope": "React client, Express API, member data, TMDB integration, and original OCI design",
+      "status": "Recorded local demo; historical cloud design"
+    },
+    "architecture": {
+      "diagram": "architecture-filmvault.svg",
+      "alt": "FilmVault architecture showing a React client calling an Express API that combines TMDB catalog data with member accounts, ratings, collections, email, and OCI storage",
+      "caption": "Catalog metadata stays external; FilmVault owns the social layer around it.",
+      "how": "The React client uses one Express API for searches, people, authentication, profiles, ratings, and collections. The API enriches member-owned records with TMDB movie and television metadata, sends account email, and can process profile images before writing them to OCI Object Storage.",
+      "decisions": [
+        "TMDB remains the catalog source while the application database owns users, ratings, and saved collections.",
+        "Authentication and admin checks live in API middleware rather than being inferred from client state.",
+        "The current SQLite demo path improves repeatability; the original OCI design retains MySQL and broader infrastructure."
+      ],
+      "outcomeLabel": "Tradeoff",
+      "outcome": "The local demo is cheap and reproducible, while the checked-in OCI design shows the original production boundary. That history also leaves dependency upgrades and fresh deployment validation as explicit maintenance work."
+    },
+    "url": "https://github.com/andy98w/FilmVault",
+    "action": "View source"
+  },
+  {
+    "id": "summit",
+    "name": "Summit Tutoring Center",
+    "category": "Client work",
+    "tags": [
+      "React",
+      "Google Sheets",
+      "DreamHost"
+    ],
+    "icon": "summit-logo.jpg",
+    "summary": "A working website for a tutoring center, with schedules the staff can update themselves.",
+    "detail": "I built this for a tutoring business owned by family friends. It covers classes, staff, counseling, and inquiries, and fits the hosting setup they already had.",
+    "bullets": [
+      "Staff maintain schedules, seminars, and posts through published Google Sheets.",
+      "CSV parsing handles quoted and multiline fields, with caching and stale-data fallback.",
+      "The inquiry flow uses Web3Forms when configured and falls back to an email draft.",
+      "Deployed to the business\u2019s existing DreamHost account."
+    ],
+    "ownership": {
+      "role": "Designer and developer",
+      "scope": "Information architecture, frontend, staff-managed content flow, and deployment",
+      "status": "Live client website"
+    },
+    "architecture": {
+      "diagram": "architecture-summit.svg",
+      "alt": "Summit Tutoring Center publishing flow from staff-managed Google Sheets through CSV parsing and browser caching to the React website on DreamHost",
+      "caption": "A deliberately small publishing system that the business can operate without a CMS.",
+      "how": "Staff edit schedules, seminars, and posts in familiar Google Sheets. The React site fetches the published CSV, parses quoted and multiline fields, and keeps the latest good response in browser storage. The production build stays on the business's existing DreamHost account.",
+      "decisions": [
+        "Google Sheets serves as the editing interface, avoiding a custom CMS and new staff accounts.",
+        "A five-minute cache limits repeat fetches while stale-data fallback keeps the last valid schedule visible.",
+        "The inquiry form uses Web3Forms when configured and can fall back to an email draft."
+      ],
+      "outcomeLabel": "Result",
+      "outcome": "The site is live for a real tutoring business, and nontechnical staff can update frequently changing information without asking for a code deployment."
+    },
+    "url": "https://github.com/andy98w/summitwebsite",
+    "action": "View source",
+    "liveUrl": "https://summittutoringcenter.com/",
+    "liveAction": "Visit site"
+  }
+]

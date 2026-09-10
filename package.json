@@ -1,0 +1,18 @@
+{
+  "name": "andy-wu-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "node src/render-content.mjs && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "gsap": "^3.13.0",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  }
+}

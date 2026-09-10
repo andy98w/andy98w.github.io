@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" role="img" aria-labelledby="title desc">
+  <title id="title">Sizzle recipe and illustration pipeline</title><desc id="desc">A query searches saved recipes or generates structured recipe data. The recipe is persisted before background image jobs upload illustrations, and the cooking view uses Matter.js.</desc>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8z" fill="#a15638"/></marker><style>.t{font:600 13px system-ui,sans-serif;fill:#292e24}.s{font:11px system-ui,sans-serif;fill:#67695b}.n{fill:#f4f0e7;stroke:#868876;stroke-width:1.3}.g{fill:#dfe4d7;stroke:#6f7564;stroke-width:1.3}.o{fill:none;stroke:#a15638;stroke-width:1.7;marker-end:url(#a)}.d{fill:none;stroke:#8c8e7d;stroke-width:1.3;stroke-dasharray:5 5}.label{font:700 10px system-ui,sans-serif;letter-spacing:1.4px;fill:#a15638}</style></defs>
+  <text class="label" x="34" y="30">RECIPE PATH</text><text class="label" x="580" y="30">BACKGROUND MEDIA</text>
+  <rect class="n" x="34" y="72" width="140" height="72" rx="4"/><text class="t" x="54" y="100">Dish or ingredients</text><text class="s" x="54" y="121">natural-language query</text>
+  <rect class="n" x="214" y="72" width="140" height="72" rx="4"/><text class="t" x="234" y="100">Saved search</text><text class="s" x="234" y="121">Supabase recipes</text><path class="o" d="M174 108h40"/>
+  <rect class="g" x="394" y="72" width="150" height="72" rx="4"/><text class="t" x="414" y="99">Structured recipe</text><text class="s" x="414" y="120">ingredients · tools · steps</text><path class="o" d="M354 108h40"/>
+  <text class="s" x="365" y="94">miss</text>
+  <rect class="n" x="394" y="218" width="150" height="72" rx="4"/><text class="t" x="414" y="246">Next.js cooking view</text><text class="s" x="414" y="267">step state + Matter.js</text><path class="o" d="M469 144v74"/>
+  <rect class="n" x="580" y="72" width="132" height="72" rx="4"/><text class="t" x="600" y="100">Image jobs</text><text class="s" x="600" y="121">thread pool</text><path class="d" d="M544 108h36"/>
+  <rect class="n" x="752" y="72" width="114" height="72" rx="4"/><text class="t" x="772" y="100">OCI storage</text><text class="s" x="772" y="121">step artwork</text><path class="o" d="M712 108h40"/>
+  <path class="d" d="M809 144v110H544"/><text class="s" x="620" y="246">illustrations arrive later</text>
+  <rect class="n" x="34" y="218" width="274" height="72" rx="4"/><text class="t" x="54" y="246">Supabase</text><text class="s" x="54" y="267">recipe saved before media work completes</text><path class="o" d="M394 128l-86 126M308 254h86"/>
+</svg>

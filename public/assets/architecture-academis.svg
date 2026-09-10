@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" role="img" aria-labelledby="title desc">
+  <title id="title">Academis retrieval architecture</title><desc id="desc">Textbook PDFs are extracted, chunked, embedded, and stored by subject. Student questions retrieve subject-scoped passages for the FastAPI tutoring answer.</desc>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8z" fill="#a15638"/></marker><style>.t{font:600 13px system-ui,sans-serif;fill:#292e24}.s{font:11px system-ui,sans-serif;fill:#67695b}.n{fill:#f4f0e7;stroke:#868876;stroke-width:1.3}.g{fill:#dfe4d7;stroke:#6f7564;stroke-width:1.3}.o{fill:none;stroke:#a15638;stroke-width:1.7;marker-end:url(#a)}.label{font:700 10px system-ui,sans-serif;letter-spacing:1.4px;fill:#a15638}</style></defs>
+  <text class="label" x="32" y="28">OFFLINE INGESTION</text><text class="label" x="598" y="28">QUESTION PATH</text>
+  <rect class="n" x="32" y="66" width="120" height="68" rx="4"/><text class="t" x="52" y="94">Textbook PDF</text><text class="s" x="52" y="114">course source</text>
+  <rect class="n" x="186" y="66" width="130" height="68" rx="4"/><text class="t" x="206" y="94">Extract + chunk</text><text class="s" x="206" y="114">passages + metadata</text>
+  <rect class="n" x="350" y="66" width="130" height="68" rx="4"/><text class="t" x="370" y="94">Embed</text><text class="s" x="370" y="114">vector representation</text>
+  <path class="o" d="M152 100h34M316 100h34"/>
+  <rect class="g" x="350" y="210" width="230" height="92" rx="4"/><text class="t" x="374" y="242">MongoDB Atlas Vector Search</text><text class="s" x="374" y="264">chunk + subject + unit</text><text class="s" x="374" y="282">embedding index</text><path class="o" d="M415 134v76"/>
+  <rect class="n" x="598" y="66" width="132" height="68" rx="4"/><text class="t" x="618" y="94">React client</text><text class="s" x="618" y="114">selected course</text>
+  <rect class="n" x="764" y="66" width="104" height="68" rx="4"/><text class="t" x="784" y="94">Question</text><text class="s" x="784" y="114">student prompt</text><path class="o" d="M730 100h34"/>
+  <rect class="n" x="638" y="210" width="230" height="92" rx="4"/><text class="t" x="662" y="240">FastAPI tutor</text><text class="s" x="662" y="262">subject filter → nearest chunks</text><text class="s" x="662" y="281">context → generated answer</text>
+  <path class="o" d="M816 134v76M638 256h-58"/><path class="o" d="M753 210v-42q0-20-20-20H618q-20 0-20-20V96"/>
+</svg>
