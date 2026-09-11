@@ -12,53 +12,53 @@
     "image": "kubevista-dashboard.webp",
     "alt": "KubeVista operations console showing its validated deployment snapshot",
     "icon": "kubernetes.svg",
-    "summary": "A read-only Kubernetes console, backed by an EKS platform I built and tested on AWS.",
-    "detail": "I built the Go API and React dashboard, then the platform around them: networking, identity, GitOps, telemetry, and failure tests. The API can inspect workloads, but cannot change them or read Secrets.",
+    "summary": "A Kubernetes operations console backed by an EKS platform I built and tested on AWS.",
+    "detail": "I built the Go API and React dashboard, then the platform around them: networking, identity, GitOps, telemetry, and failure tests. Inventory stays read-only by default. A separate operator path can restart or scale an approved Deployment without opening the door to arbitrary Kubernetes writes.",
     "bullets": [
-      "Terraform provisions the environment across three AWS availability zones.",
-      "Twelve Argo CD applications reported Synced and Healthy during the AWS run.",
-      "GitHub Actions uses OIDC, signed images, vulnerability scans, and SBOMs.",
+      "Restart and scale are the only write actions, limited by namespace and replica guardrails.",
+      "Every change requires a reason, Kubernetes dry run, current resource version, and single-use review plan.",
+      "Production execution verifies the load balancer's signed identity claims and records an audit receipt.",
       "All 896 requests returned HTTP 200 during a two-second API pod replacement."
     ],
-    "note": "Screenshot from the representative demo. The paid AWS deployment has been intentionally taken down.",
+    "note": "The August AWS run used the read-only version. Guarded operations were added afterward and are available in the local simulation; the paid cluster remains intentionally offline.",
     "ownership": {
       "role": "Solo builder",
-      "scope": "Product, Go API, React interface, AWS platform, delivery, and operations",
-      "status": "Recorded demo; paid AWS environment retired"
+      "scope": "Product, Go API, React interface, AWS platform, delivery, security boundaries, and operations",
+      "status": "Guarded operations tested locally; paid AWS environment retired"
     },
     "architecture": {
       "diagram": "architecture-kubevista.svg",
       "alt": "KubeVista architecture from GitHub Actions through Argo CD into a private EKS node group, with AWS ingress, pod identity, secrets, and an observability stack",
-      "caption": "The representative AWS deployment: one EKS cluster, private workers, GitOps delivery, and a deliberately read-only dashboard API.",
-      "how": "Terraform builds the VPC, EKS control plane, managed node group, KMS keys, and AWS integrations. GitHub Actions publishes a scanned and signed image; Argo CD reconciles the manifests. Traffic enters through an AWS load balancer, while the Go API reads Kubernetes inventory under a restricted service account and emits telemetry through OpenTelemetry.",
+      "caption": "Read-only inventory is the baseline. Restart and scale use a smaller, explicitly enabled operator role with a review gate in front of it.",
+      "how": "Terraform builds the VPC, EKS control plane, managed node group, KMS keys, and AWS integrations. GitHub Actions publishes a scanned and signed image; Argo CD reconciles the manifests. Traffic enters through an AWS load balancer. The Go API reads inventory with its baseline permissions, while an optional namespaced role permits only Deployment restart and scale after a server-side dry run.",
       "decisions": [
-        "Workers stay private; one NAT gateway reduced demo cost, accepting an Availability Zone dependency that a long-running production setup would remove.",
-        "EKS Pod Identity and External Secrets replace long-lived AWS credentials inside pods.",
-        "The dashboard has read-only RBAC and cannot read Secrets, turning the product boundary into a security control."
+        "The browser never submits YAML. It chooses between two typed operations, supplies a reason, and reviews the exact effect before execution.",
+        "Review plans expire after five minutes, work once, and are bound to the request and Kubernetes resource version to prevent edits or replay.",
+        "The operator role remains namespaced and cannot read Secrets, exec into pods, change RBAC, delete resources, or write arbitrary objects."
       ],
       "caseStudy": {
-        "title": "A controlled pod replacement",
-        "intro": "I used the dashboard as a real workload, kept the temporary AWS footprint cost-aware, and checked whether the platform controls behaved together under a small failure.",
+        "title": "How a change gets through",
+        "intro": "The write path is deliberately narrower than the inventory API. Each stage removes a class of accidental or unauthorized change before Kubernetes accepts it.",
         "steps": [
           {
-            "title": "Provision",
-            "text": "Terraform created the three-AZ VPC, EKS cluster, private worker subnets, identity, and integrations."
+            "title": "Choose",
+            "text": "Select restart or scale for a Deployment in an allowed namespace and explain why the change is needed."
           },
           {
-            "title": "Deliver",
-            "text": "GitHub Actions published a scanned and signed release; Argo CD reconciled 12 healthy applications."
+            "title": "Constrain",
+            "text": "The API rejects unsupported kinds, namespaces, actions, and replica counts before touching the cluster."
           },
           {
-            "title": "Disrupt",
-            "text": "Fortio sent traffic while a running API pod was deliberately removed."
+            "title": "Dry run",
+            "text": "Kubernetes authorization and admission evaluate the same request without persisting it."
           },
           {
-            "title": "Verify",
-            "text": "The replacement became ready in two seconds and all 896 requests returned HTTP 200."
+            "title": "Bind",
+            "text": "A five-minute, single-use plan locks the reviewed request to the current resource version."
           },
           {
-            "title": "Retire",
-            "text": "I destroyed the paid environment and audited DNS, volumes, load balancers, and tagged AWS resources for leftovers."
+            "title": "Execute",
+            "text": "The API rechecks identity and dry run, applies the change through scoped RBAC, and records a receipt."
           }
         ],
         "links": [
@@ -67,16 +67,16 @@
             "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/architecture.md"
           },
           {
-            "label": "Live run",
+            "label": "Operations code",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/api/internal/kubernetes/operations.go"
+          },
+          {
+            "label": "Runbook",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/runbook.md"
+          },
+          {
+            "label": "Live AWS evidence",
             "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/live-eks-2026-08-31.md"
-          },
-          {
-            "label": "Failure test",
-            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/controlled-disruption-case-study.md"
-          },
-          {
-            "label": "Teardown audit",
-            "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/teardown-2026-08-31.md"
           }
         ]
       },
@@ -222,6 +222,9 @@
       "RAG"
     ],
     "icon": "academis-logo.png",
+    "video": "academis-demo.mp4",
+    "poster": "academis-demo.jpg",
+    "videoAlt": "Academis demo moving from the AP Economics study desk into the Biology course workspace",
     "summary": "An AP study app that answers questions from the selected course material.",
     "detail": "I built subject-scoped retrieval and a study interface for textbooks, questions, quizzes, and graphs. Microeconomics and Macroeconomics are the most complete courses; science content is partial.",
     "bullets": [

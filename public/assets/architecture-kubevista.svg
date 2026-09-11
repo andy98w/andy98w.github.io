@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" role="img" aria-labelledby="title desc">
   <title id="title">KubeVista AWS and EKS architecture</title>
-  <desc id="desc">GitHub Actions publishes an image, Argo CD reconciles it into private EKS workers, and AWS ingress, identity, secrets, and telemetry surround the application.</desc>
+  <desc id="desc">GitHub Actions publishes an image, Argo CD reconciles it into private EKS workers, and the dashboard separates read-only inventory from guarded Deployment operations.</desc>
   <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 8 4 0 8z" fill="#a15638"/></marker><style>.t{font:600 13px system-ui,sans-serif;fill:#292e24}.s{font:11px system-ui,sans-serif;fill:#67695b}.n{fill:#f4f0e7;stroke:#868876;stroke-width:1.3}.g{fill:#dfe4d7;stroke:#6f7564;stroke-width:1.3}.o{fill:none;stroke:#a15638;stroke-width:1.7;marker-end:url(#a)}.d{fill:none;stroke:#a9aa9c;stroke-width:1.3;stroke-dasharray:5 5}.label{font:700 10px system-ui,sans-serif;letter-spacing:1.4px;fill:#a15638}</style></defs>
   <text class="label" x="34" y="30">DELIVERY</text><text class="label" x="305" y="30">AWS PUBLIC EDGE</text><text class="label" x="520" y="30">PRIVATE EKS WORKERS</text>
   <rect class="n" x="34" y="52" width="154" height="64" rx="4"/><text class="t" x="52" y="79">GitHub Actions</text><text class="s" x="52" y="99">scan · sign · SBOM</text>
@@ -8,14 +8,14 @@
   <rect class="n" x="236" y="153" width="132" height="64" rx="4"/><text class="t" x="255" y="180">Argo CD</text><text class="s" x="255" y="200">12 applications</text>
   <path class="o" d="M111 116v37"/><path class="o" d="M188 185h48"/>
   <rect class="n" x="307" y="52" width="132" height="64" rx="4"/><text class="t" x="326" y="79">Route 53 + ACM</text><text class="s" x="326" y="99">DNS and TLS</text>
-  <rect class="n" x="307" y="254" width="132" height="64" rx="4"/><text class="t" x="326" y="281">AWS load balancer</text><text class="s" x="326" y="301">only public entry</text>
+  <rect class="n" x="307" y="254" width="132" height="64" rx="4"/><text class="t" x="326" y="281">AWS load balancer</text><text class="s" x="326" y="301">Cognito · signed claims</text>
   <path class="o" d="M373 116v138"/>
   <rect class="g" x="488" y="42" width="378" height="286" rx="6"/><text class="label" x="508" y="67">MANAGED NODE GROUP · PRIVATE SUBNETS</text>
-  <rect class="n" x="517" y="91" width="145" height="74" rx="4"/><text class="t" x="537" y="119">React dashboard</text><text class="s" x="537" y="140">served by API pod</text>
-  <rect class="n" x="691" y="91" width="145" height="74" rx="4"/><text class="t" x="711" y="119">Go API</text><text class="s" x="711" y="140">read-only RBAC</text>
+  <rect class="n" x="517" y="91" width="145" height="74" rx="4"/><text class="t" x="537" y="119">React dashboard</text><text class="s" x="537" y="140">review · receipt</text>
+  <rect class="n" x="691" y="91" width="145" height="74" rx="4"/><text class="t" x="711" y="119">Go API</text><text class="s" x="711" y="140">dry run · execute</text>
   <path class="o" d="M439 286h44q35 0 35-35v-86"/><path class="o" d="M662 128h29"/>
   <rect class="n" x="517" y="205" width="145" height="74" rx="4"/><text class="t" x="537" y="233">External Secrets</text><text class="s" x="537" y="254">Pod Identity → KMS</text>
   <rect class="n" x="691" y="205" width="145" height="74" rx="4"/><text class="t" x="711" y="233">OTel collectors</text><text class="s" x="711" y="254">metrics · logs · traces</text>
   <path class="d" d="M589 165v40M764 165v40"/>
-  <text class="s" x="508" y="310">NetworkPolicies · restricted containers · encrypted gp3 volumes</text>
+  <text class="s" x="508" y="310">Read baseline · scoped role · policies · encrypted storage</text>
 </svg>
