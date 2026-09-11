@@ -12,6 +12,10 @@ export class FrameJourney {
     this.context.imageSmoothingQuality = 'medium';
     this.cache = new Map();
     this.pending = new Map();
+    this.direction = 1;
+    this.cacheLimit = innerWidth < 768 ? 8 : 16;
+    this.drawRequest = 0;
+    this.warmed = new Set();
     this.failed = new Set();
     this.target = 0;
     this.displayed = -1;
@@ -38,7 +42,7 @@ export class FrameJourney {
     if (this.still.dataset.name !== name) {
       this.still.classList.remove('is-visible');
       this.still.dataset.name = name;
-      this.still.src = `/assets/hold-stills/${name}.webp?v=reconstruction-1`;
+      this.still.src = this.stillUrl(name);
     }
     if (this.still.complete && this.still.naturalWidth) {
       this.stillTimer = setTimeout(() => {
@@ -46,6 +50,68 @@ export class FrameJourney {
           this.still.classList.add('is-visible');
       }, 60);
     }
+  }
+  stillUrl(name) {
+    return `/assets/hold-stills/${name}.webp?v=reconstruction-1`;
+  }
+  stopWarming() {
+    clearTimeout(this.warmTimer);
+    clearTimeout(this.nearStillTimer);
+    this.warmController?.abort();
+    this.warmController = null;
+    this.nearStillController?.abort();
+    this.warmTimer = null;
+    this.nearStillName = null;
+  }
+  canWarm() {
+    const connection = globalThis.navigator?.connection;
+    return !this.disposed && !this.paused && !document.hidden &&
+      !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType);
+  }
+  async warmUrl(url, signal) {
+    if (this.warmed.has(url) || signal.aborted) return;
+    const response = await fetch(url, { signal, cache: 'force-cache', priority: 'low' });
+    if (!response.ok) return;
+    await response.arrayBuffer(); // Fill HTTP cache without retaining decoded images.
+    if (signal.aborted || this.disposed) return;
+    this.warmed.add(url);
+    if (this.warmed.size > 96) this.warmed.delete(this.warmed.values().next().value);
+  }
+  planWarming(nearest) {
+    if (!this.canWarm()) return;
+    const name = this.holds.get(nearest);
+    if (name && this.nearStillName !== name) {
+      clearTimeout(this.nearStillTimer);
+      this.nearStillController?.abort();
+      this.nearStillName = name;
+      this.nearStillTimer = setTimeout(() => {
+        if (!this.canWarm()) return;
+        this.nearStillController = new AbortController();
+        this.warmUrl(this.stillUrl(name), this.nearStillController.signal).catch(() => {});
+      }, 100);
+    }
+    if (!this.warmTimer && !this.warmController) this.warmTimer = setTimeout(() => this.warmStretch(), 900);
+  }
+  async warmStretch() {
+    this.warmTimer = null;
+    if (!this.canWarm()) return;
+    if (this.pending.size) {
+      this.warmTimer = setTimeout(() => this.warmStretch(), 300);
+      return;
+    }
+    const controller = new AbortController();
+    this.warmController = controller;
+    const origin = this.target, direction = this.direction;
+    try {
+      // One speculative request at a time; resume motion cancels this work.
+      for (let step = 1; step <= 32; step++) {
+        const index = origin + step * direction;
+        if (!this.canWarm() || controller.signal.aborted || index < 0 || index >= this.count) break;
+        if (this.cache.has(index) || this.pending.has(index)) continue;
+        await this.warmUrl(this.url(index), controller.signal);
+      }
+    } catch { /* Speculative failures must not affect the visible sequence. */ }
+    finally { if (this.warmController === controller) this.warmController = null; }
   }
   url(index) {
     for (const segment of this.segments) {
@@ -69,6 +135,8 @@ export class FrameJourney {
     const previous = this.target;
     this.target = Math.round(Math.max(0, Math.min(1, value)) * (this.count - 1));
     if (previous !== this.target) {
+      this.stopWarming();
+      this.direction = Math.sign(this.target - previous);
       clearTimeout(this.stillTimer);
       this.still.classList.remove('is-visible');
     }
@@ -77,13 +145,17 @@ export class FrameJourney {
     this.pump();
     // Only settle within eighteen source frames; never pull the camera across a room.
     const nearest = [...this.holds.keys()].sort((a, b) => Math.abs(a - this.target) - Math.abs(b - this.target))[0];
+    this.planWarming(nearest);
     if (Math.abs(nearest - this.target) <= 18 && nearest !== this.target) {
       this.snapTimer = setTimeout(() => this.stepToHold(nearest), 180);
     }
   }
   stepToHold(index) {
     if (this.paused || this.disposed || document.hidden) return;
-    if (this.displayed === this.target) this.target += Math.sign(index - this.target);
+    if (this.displayed === this.target && this.target !== index) {
+      this.direction = Math.sign(index - this.target);
+      this.target += this.direction;
+    }
     this.draw();
     this.pump();
     if (this.failed.has(this.target)) return;
@@ -104,33 +176,53 @@ export class FrameJourney {
     this.canvas.style.visibility = '';
     this.settleStill();
   }
+  scheduleDraw() {
+    if (this.drawRequest || this.disposed) return;
+    this.drawRequest = requestAnimationFrame(() => {
+      this.drawRequest = 0;
+      if (!this.disposed) this.draw();
+    });
+  }
+  wantedFrames() {
+    const direction = this.direction;
+    const ahead = this.cacheLimit - 4;
+    return [this.target, this.target + direction, this.target - direction,
+      ...Array.from({ length: ahead - 1 }, (_, i) => this.target + direction * (i + 2)),
+      this.target - direction * 2].filter(index => index >= 0 && index < this.count);
+    }
   pump() {
     if (this.paused || this.disposed || document.hidden) return;
-    const direction = this.target >= this.displayed ? 1 : -1;
-    const wanted = [this.target, this.target + direction, this.target + direction * 2, this.target - direction]
-      .filter(index => index >= 0 && index < this.count);
+    const wanted = this.wantedFrames();
     for (const [index, controller] of this.pending) {
-      if (Math.abs(index - this.target) > 10) controller.abort();
+      if (!wanted.includes(index)) controller.abort();
     }
     for (const index of wanted) {
-      if (this.pending.size >= 3) break;
+      if (this.pending.size >= 4) break;
       if (this.cache.has(index) || this.pending.has(index) || this.failed.has(index)) continue;
       const controller = new AbortController();
       this.pending.set(index, controller);
       fetch(this.url(index), { signal: controller.signal, cache: 'force-cache' })
         .then(response => { if (!response.ok) throw new Error('Frame unavailable'); return response.blob(); })
-        .then(blob => createImageBitmap(blob))
+        .then(blob => {
+          // Scroll jumps can make downloaded frames obsolete before decoding.
+          if (this.disposed || controller.signal.aborted || !this.wantedFrames().includes(index)) return null;
+          return createImageBitmap(blob);
+        })
         .then(bitmap => {
-          if (this.disposed || controller.signal.aborted || Math.abs(index - this.target) > 12) {
+          if (!bitmap) return;
+          if (this.disposed || controller.signal.aborted || Math.abs(index - this.target) > this.cacheLimit) {
             bitmap.close(); return;
           }
           this.cache.set(index, bitmap);
-          const farthest = [...this.cache.keys()].sort((a, b) => Math.abs(b - this.target) - Math.abs(a - this.target));
-          while (this.cache.size > 6) {
+          const currentWanted = this.wantedFrames();
+          const farthest = [...this.cache.keys()].sort((a, b) =>
+            Number(currentWanted.includes(a)) - Number(currentWanted.includes(b)) ||
+            Math.abs(b - this.target) - Math.abs(a - this.target));
+          while (this.cache.size > this.cacheLimit) {
             const victim = farthest.shift();
             this.cache.get(victim).close(); this.cache.delete(victim);
           }
-          this.draw();
+          this.scheduleDraw();
         })
         .catch(error => { if (error.name !== 'AbortError') this.failed.add(index); })
         .finally(() => { this.pending.delete(index); this.pump(); });
@@ -138,6 +230,8 @@ export class FrameJourney {
   }
   dispose() {
     this.disposed = true;
+    this.stopWarming();
+    cancelAnimationFrame(this.drawRequest);
     clearTimeout(this.snapTimer);
     clearTimeout(this.stillTimer);
     this.still.remove();
