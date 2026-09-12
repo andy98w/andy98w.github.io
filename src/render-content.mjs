@@ -27,6 +27,12 @@ const caseStudy = (study) => {
 const architecture = (p) => {
   if (!p.architecture) return p.bullets?.length ? `<section class="architecture-section"><h3>What I changed</h3><ul>${p.bullets.map((bullet) => `<li>${esc(bullet)}</li>`).join("")}</ul></section>` : "";
   const a = p.architecture;
+  if (p.detailLayout === "notes" || p.detailLayout === "flow") {
+    const flow = p.detailLayout === "flow"
+      ? `<ol class="project-flow" aria-label="Textbook-to-answer flow">${p.flow.map((step) => `<li>${esc(step)}</li>`).join("")}</ol>`
+      : "";
+    return `<section class="architecture-section engineering-notes" aria-labelledby="notes-${p.id}"><h3 id="notes-${p.id}">${p.detailLayout === "flow" ? "From textbook to answer" : "Behind the project"}</h3>${flow}<p>${esc(a.how)}</p><h3>Engineering choices</h3><ul>${a.decisions.map((decision) => `<li>${esc(decision)}</li>`).join("")}</ul><p class="project-outcome"><span>${esc(a.outcomeLabel || "Result")}</span>${esc(a.outcome)}</p></section>`;
+  }
   return `<section class="architecture-section" aria-labelledby="architecture-${p.id}"><div class="architecture-heading"><p class="section-note">System map</p><h3 id="architecture-${p.id}">Architecture</h3></div><figure class="architecture-figure"><img src="/assets/${a.diagram}" alt="${esc(a.alt)}" width="900" height="360" loading="lazy" /><figcaption>${esc(a.caption)}</figcaption></figure><div class="architecture-copy"><div class="how-it-works"><h3>How it works</h3><p>${esc(a.how)}</p></div><div class="engineering-decisions"><h3>Engineering decisions</h3><ol>${a.decisions.map((decision) => `<li>${esc(decision)}</li>`).join("")}</ol></div></div><p class="project-outcome"><span>${esc(a.outcomeLabel || "Result")}</span>${esc(a.outcome)}</p>${caseStudy(a.caseStudy)}</section>`;
 };
 const featured = projects

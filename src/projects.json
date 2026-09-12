@@ -181,6 +181,7 @@
   },
   {
     "id": "sizzle",
+    "detailLayout": "notes",
     "dates": "Mar–Aug 2025",
     "dateNote": "Original project dates. Performance and accessibility updates: September 2026.",
     "name": "Sizzle",
@@ -222,6 +223,8 @@
   },
   {
     "id": "academis",
+    "detailLayout": "flow",
+    "flow": ["Textbook PDFs", "Chunks & embeddings", "Retrieve passages", "Generate answer"],
     "dates": "Apr–Sep 2025",
     "dateNote": "Original project dates. Session-isolation and evaluation updates: September 2026.",
     "name": "Academis",
@@ -266,6 +269,7 @@
   },
   {
     "id": "filmvault",
+    "detailLayout": "notes",
     "dates": "Original build: Feb–May 2023",
     "withoutAi": true,
     "dateNote": "v1: Feb–May 2023; v2: Jun–Oct 2024; v3: Apr–Aug 2025. The first two versions were built without AI; later versions and September 2026 updates include AI assistance.",
@@ -338,6 +342,7 @@
   },
   {
     "id": "summit",
+    "detailLayout": "notes",
     "dates": "Spring 2024",
     "withoutAi": true,
     "name": "Summit Tutoring Center",
