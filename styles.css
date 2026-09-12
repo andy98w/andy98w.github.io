@@ -894,6 +894,33 @@ h2 > span {
   font-size: 14px;
   box-shadow: 0 3px 15px #0001;
 }
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.65rem 0;
+}
+.project-meta:empty { display: none; }
+.project-dates {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.original-build-badge {
+  display: inline-block;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.73rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.archive-list .original-build-badge,
+.archive-list .project-dates {
+  display: block;
+  width: fit-content;
+  margin-top: 0.4rem;
+}
 .project-kicker {
   display: flex;
   align-items: center;
