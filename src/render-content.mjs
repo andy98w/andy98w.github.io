@@ -23,7 +23,7 @@ const caseStudy = (study) => {
   return `<section class="case-study"><div class="case-study-heading"><h3>${esc(study.title)}</h3><p>${esc(study.intro)}</p></div><ol class="case-study-steps">${study.steps.map((step) => `<li><strong>${esc(step.title)}</strong><span>${esc(step.text)}</span></li>`).join("")}</ol><nav class="evidence-links" aria-label="KubeVista project evidence">${study.links.map((link) => `<a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer">${esc(link.label)} <span aria-hidden="true">↗</span></a>`).join("")}</nav></section>`;
 };
 const architecture = (p) => {
-  if (!p.architecture) return "";
+  if (!p.architecture) return p.bullets?.length ? `<section class="architecture-section"><h3>What I changed</h3><ul>${p.bullets.map((bullet) => `<li>${esc(bullet)}</li>`).join("")}</ul></section>` : "";
   const a = p.architecture;
   return `<section class="architecture-section" aria-labelledby="architecture-${p.id}"><div class="architecture-heading"><p class="section-note">System map</p><h3 id="architecture-${p.id}">Architecture</h3></div><figure class="architecture-figure"><img src="/assets/${a.diagram}" alt="${esc(a.alt)}" width="900" height="360" loading="lazy" /><figcaption>${esc(a.caption)}</figcaption></figure><div class="architecture-copy"><div class="how-it-works"><h3>How it works</h3><p>${esc(a.how)}</p></div><div class="engineering-decisions"><h3>Engineering decisions</h3><ol>${a.decisions.map((decision) => `<li>${esc(decision)}</li>`).join("")}</ol></div></div><p class="project-outcome"><span>${esc(a.outcomeLabel || "Result")}</span>${esc(a.outcome)}</p>${caseStudy(a.caseStudy)}</section>`;
 };
@@ -42,9 +42,8 @@ const small = `<div class="more-heading"><h3>A few more things I built.</h3></di
   )
   .join("")}</div>`;
 const earlier = [
-  ['AnimalCalendar', 'AnimalCalendar', 'Angular calendar with per-user Firebase events', 'calendar-days.svg'],
-  ['Ants', 'Ants', 'CS 61A · Python tower-defense game model', 'bug.svg'],
-  ['Ngordnet', 'Ngordnet', 'CS 61B · WordNet graphs and word-frequency queries', 'network.svg'],
+  ['Ants', 'Ants', 'CS 61A · Python inheritance, composition, and game-unit behavior', 'bug.svg'],
+  ['Ngordnet', 'Ngordnet', 'CS 61B · WordNet traversal, set intersections, and NGram ranking', 'network.svg'],
   ['MazeGame', 'MazeGame', 'CS 61B · Seeded worlds, save/load, and deterministic replay', 'maze.svg'],
   ['SuperSpaceGames', 'SuperSpaceGames', 'iOS games and physics experiments', 'gamepad.svg'],
   ['Past-Projects', 'Past projects', 'More experiments on GitHub', 'archive-box.svg'],

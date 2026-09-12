@@ -12,15 +12,15 @@
     "image": "kubevista-dashboard.webp",
     "alt": "KubeVista operations console showing its validated deployment snapshot",
     "icon": "kubernetes.svg",
-    "summary": "A Kubernetes operations console backed by an EKS platform I built and tested on AWS.",
-    "detail": "I built the Go API and React dashboard, then the platform around them: networking, identity, GitOps, telemetry, and failure tests. Inventory stays read-only by default. A separate operator path can restart or scale an approved Deployment without opening the door to arbitrary Kubernetes writes.",
+    "summary": "A Kubernetes console for investigating failed workloads, reviewing a fix, and checking recovery. Built around an EKS platform I deployed on AWS.",
+    "detail": "I built the Go API, React console, and AWS platform around them. The console connects Deployments, ReplicaSets, Pods, and events so an investigation can lead into a reviewed restart, scale, or rollback. Recovery checks look at the rollout—not just whether Kubernetes accepted the request.",
     "bullets": [
-      "Restart and scale are the only write actions, limited by namespace and replica guardrails.",
+      "Restart, scale, and rollback are limited by namespace, Deployment, and replica guardrails.",
       "Every change requires a reason, Kubernetes dry run, current resource version, and single-use review plan.",
       "Production execution verifies the load balancer's signed identity claims and records an audit receipt.",
-      "All 896 requests returned HTTP 200 during a two-second API pod replacement."
+      "All 896 requests returned HTTP 200 during a 45-second AWS pod-loss test; the replacement became Ready in two seconds."
     ],
-    "note": "The August AWS run used the read-only version. Guarded operations were added afterward and are available in the local simulation; the paid cluster remains intentionally offline.",
+    "note": "The August AWS deployment used the read-only version and has been torn down. Guarded operations and the incident lab were added afterward and tested locally; the AWS traffic result does not measure those newer features.",
     "ownership": {
       "role": "Solo builder",
       "scope": "Product, Go API, React interface, AWS platform, delivery, security boundaries, and operations",
@@ -29,12 +29,12 @@
     "architecture": {
       "diagram": "architecture-kubevista.svg",
       "alt": "KubeVista architecture from GitHub Actions through Argo CD into a private EKS node group, with AWS ingress, pod identity, secrets, and an observability stack",
-      "caption": "Read-only inventory is the baseline. Restart and scale use a smaller, explicitly enabled operator role with a review gate in front of it.",
-      "how": "Terraform builds the VPC, EKS control plane, managed node group, KMS keys, and AWS integrations. GitHub Actions publishes a scanned and signed image; Argo CD reconciles the manifests. Traffic enters through an AWS load balancer. The Go API reads inventory with its baseline permissions, while an optional namespaced role permits only Deployment restart and scale after a server-side dry run.",
+      "caption": "The original AWS platform. The newer operator path adds reviewed restart, scale, and rollback without granting arbitrary cluster writes.",
+      "how": "Terraform provisioned networking across three availability zones, two private worker nodes, Pod Identity, and KMS encryption. Twelve Argo CD applications delivered the platform, with metrics, logs, and traces through Prometheus, Grafana, Loki, Tempo, and OpenTelemetry. The newer Go operator path checks identity, dry-runs the change, and follows rollout state after execution.",
       "decisions": [
-        "The browser never submits YAML. It chooses between two typed operations, supplies a reason, and reviews the exact effect before execution.",
+        "The browser never submits YAML. Restart, scale, and rollback are typed operations; rollback pins the reviewed template from an owned ReplicaSet.",
         "Review plans expire after five minutes, work once, and are bound to the request and Kubernetes resource version to prevent edits or replay.",
-        "The operator role remains namespaced and cannot read Secrets, exec into pods, change RBAC, delete resources, or write arbitrary objects."
+        "Recovery requires the expected controller generation and updated/available replicas. A local kind lab exercises probe, crash-loop, image-pull, memory, and scheduling failures. Plans and receipts remain process-local."
       ],
       "caseStudy": {
         "title": "How a change gets through",
@@ -42,7 +42,7 @@
         "steps": [
           {
             "title": "Choose",
-            "text": "Select restart or scale for a Deployment in an allowed namespace and explain why the change is needed."
+            "text": "Select restart, scale, or rollback for an allowed Deployment and explain why the change is needed."
           },
           {
             "title": "Constrain",
@@ -58,7 +58,7 @@
           },
           {
             "title": "Execute",
-            "text": "The API rechecks identity and dry run, applies the change through scoped RBAC, and records a receipt."
+            "text": "The API rechecks identity and dry run, applies the scoped change, records a receipt, and checks rollout recovery."
           }
         ],
         "links": [
@@ -144,18 +144,18 @@
     "alt": "Ledgly financial dashboard with charges, payments, and membership balances",
     "icon": "ledgly-logo.webp",
     "summary": "A shared ledger that helps club treasurers match payment emails to dues. Fewer spreadsheet detective stories.",
-    "detail": "I built the member ledger, payment reconciliation, and review workflow. Charges, payments, expenses, and allocations are separate records, so partial payments and split allocations have somewhere sensible to go.",
+    "detail": "I built the ledger, payment-email matching, permissions, and review workflow. The latest work tackles what happens when requests arrive twice or two treasurers allocate the same payment: idempotent creation, transactional audit records, and concurrency checks backed by PostgreSQL tests.",
     "bullets": [
       "Gmail ingestion matches payment notices to members and records confidence for review.",
       "Organization-scoped roles are enforced by the API.",
       "The assistant proposes financial changes for confirmation before executing them.",
       "Before-and-after audit records support batch undo and redo."
     ],
-    "note": "Dashboard image from the project repository.",
+    "note": "The payment-reliability work is implemented and tested on codex/payment-reliability, not deployed to the public app. Ledgly records payments; it does not move money.",
     "ownership": {
       "role": "Solo full-stack engineer",
       "scope": "Architecture, ledger model, reconciliation, permissions, and audit workflow",
-      "status": "Source available; public deployment protected"
+      "status": "Public deployment protected; reliability upgrade tested on a feature branch"
     },
     "architecture": {
       "diagram": "architecture-ledgly.svg",
@@ -163,14 +163,14 @@
       "caption": "Incoming payment email becomes a proposed ledger match, not an automatic financial fact.",
       "how": "The Next.js client calls an organization-scoped NestJS API backed by Prisma and PostgreSQL. A Gmail worker reads payment notices, extracts candidate transactions, and proposes member matches with confidence. Treasurers review ambiguous matches before payments are allocated to charges; the API records the before-and-after state in the audit log.",
       "decisions": [
-        "Charges, payments, expenses, and allocations are separate records so partial and split payments remain representable.",
-        "Gmail is read-only, and low-confidence matches stop at a human review queue.",
-        "AI write tools require confirmation and use the same role checks and audit path as ordinary API actions."
+        "Amounts use integer cents. Serializable allocation transactions and bounded retries prevent competing requests from overallocating a payment or charge.",
+        "An organization-scoped idempotency key binds to the request fingerprint. The payment, audit entry, and replay response commit together; changed-payload reuse is rejected.",
+        "Gmail matches and AI financial changes retain review gates. The new keyed creation path does not allocate funds or send notifications, keeping its transaction boundary explicit."
       ],
-      "outcomeLabel": "Tradeoff",
-      "outcome": "The extra review step gives up fully automatic reconciliation in exchange for traceable financial changes, reversible batches, and fewer silent misallocations."
+      "outcomeLabel": "Verified locally and in CI",
+      "outcome": "Six PostgreSQL integration tests cover replay, tenant boundaries, competing allocations, and rollback. Eight concurrent same-key requests produce one payment and one audit entry—not an exactly-once guarantee for email or external systems."
     },
-    "url": "https://github.com/andy98w/Ledgly",
+    "url": "https://github.com/andy98w/Ledgly/tree/codex/payment-reliability",
     "action": "View source",
     "featured": true
   },
@@ -185,7 +185,8 @@
     ],
     "icon": "sizzle-logo.png",
     "summary": "Recipes with an interactive kitchen counter. The ingredients have actual physics.",
-    "detail": "A dish name or a few ingredients become a saved recipe and a step-by-step cooking view. I built structured recipe generation, background illustration jobs, and the Matter.js counter.",
+    "detail": "A dish or a few ingredients become a saved recipe and an illustrated cooking view. I built the generation pipeline and physics counter, then separated frame-by-frame movement from React rendering so the playful part does not keep rerendering the app.",
+    "note": "The performance and accessibility upgrade is tested on codex/cooking-performance, not production-deployed. The benchmark is a local React rendering measurement, not an FPS or CPU claim.",
     "bullets": [
       "Structured ingredients, equipment, and steps drive the interface.",
       "Matter.js handles gravity, collisions, and ingredient placement.",
@@ -194,7 +195,7 @@
     "ownership": {
       "role": "Solo builder",
       "scope": "Recipe pipeline, FastAPI service, interactive cooking view, and OCI deployment",
-      "status": "Source available"
+      "status": "Performance and accessibility upgrade tested on a feature branch"
     },
     "architecture": {
       "diagram": "architecture-sizzle.svg",
@@ -203,13 +204,13 @@
       "how": "A natural-language request first searches saved recipes. If nothing fits, FastAPI creates structured ingredients, equipment, and steps, persists them in Supabase, and starts illustration work in the background. The Next.js cooking view renders each step and uses Matter.js to place the relevant objects on a virtual counter.",
       "decisions": [
         "Recipe generation produces a fixed structure so the interface does not have to parse prose.",
-        "Image work runs after the recipe is saved, keeping the main request independent of slower media generation.",
-        "Matter.js owns placement and collision behavior while React owns the recipe and step state."
+        "Illustrations run in a bounded, in-process worker pool after saving the recipe. This is background work, not a durable job queue.",
+        "Matter.js updates element transforms through refs; React owns recipe state. A single runner pauses when hidden or paused, with keyboard movement and a static reduced-motion layout."
       ],
-      "outcomeLabel": "Tradeoff",
-      "outcome": "A recipe can still load when image generation or object storage fails; the cost is accepting partially illustrated recipes and reporting those jobs separately."
+      "outcomeLabel": "Local measurement",
+      "outcome": "With 20 items, React commits fell from 301 to zero over a five-second development sample while physics movement continued. Browser checks cover pause, keyboard controls, reduced motion, and runtime errors without paid APIs."
     },
-    "url": "https://github.com/andy98w/Sizzle",
+    "url": "https://github.com/andy98w/Sizzle/tree/codex/cooking-performance",
     "action": "View source"
   },
   {
@@ -225,8 +226,9 @@
     "video": "academis-demo.mp4",
     "poster": "academis-demo.jpg",
     "videoAlt": "Academis demo moving from the AP Economics study desk into the Biology course workspace",
-    "summary": "An AP study app that answers questions from the selected course material.",
-    "detail": "I built subject-scoped retrieval and a study interface for textbooks, questions, quizzes, and graphs. Microeconomics and Macroeconomics are the most complete courses; science content is partial.",
+    "summary": "An AP study workspace that brings textbook retrieval, tutoring, quizzes, and graphs together.",
+    "detail": "I built PDF ingestion and retrieval alongside the study interface. The latest work isolates each learner’s conversation and adds a small retrieval-evaluation harness, so access boundaries and ranking calculations can be tested without paid model calls.",
+    "note": "Session isolation and evaluation are tested on codex/session-isolation, not production-deployed. Economics is the most complete content; science courses remain partial. The evaluation harness does not establish answer accuracy or a retrieval-quality improvement.",
     "bullets": [
       "PDF extraction, chunking, and embeddings feed MongoDB Atlas Vector Search.",
       "FastAPI separates tutoring, retrieval, quiz generation, and graph generation.",
@@ -235,22 +237,22 @@
     "ownership": {
       "role": "Solo builder",
       "scope": "Document ingestion, retrieval, tutoring API, and study interface",
-      "status": "Local demo and source available"
+      "status": "Local demo; session isolation and evaluation tested on a feature branch"
     },
     "architecture": {
       "diagram": "architecture-academis.svg",
       "alt": "Academis retrieval architecture showing PDF ingestion into subject-tagged chunks and MongoDB Atlas Vector Search, then a student question retrieving context for answer generation",
-      "caption": "Ingestion and question answering meet at the subject-scoped vector index.",
-      "how": "An upload script extracts textbook PDFs, splits them into chunks, creates embeddings, and stores subject metadata with each record in MongoDB Atlas. At question time, FastAPI searches only the selected course, assembles the closest passages, and sends that context into the tutoring answer path used by the React interface.",
+      "caption": "PDF ingestion feeds Atlas retrieval. Subject selection chooses the collection; microeconomics and macroeconomics share an economics collection.",
+      "how": "The ingestion pipeline extracts PDFs, creates overlapping chunks and embeddings, and stores them in MongoDB Atlas Vector Search. FastAPI retrieves passages for tutoring. The newer ask route verifies a Firebase ID token and scopes chat history to the verified user, subject, and session. Retrieval can fall back to an ungrounded answer, so not every response is textbook-backed.",
       "decisions": [
-        "Subject metadata constrains retrieval so a macroeconomics answer cannot silently borrow biology context.",
-        "Ingestion is a separate command-line pipeline, keeping expensive document processing out of student requests.",
-        "Tutoring, quizzes, graphs, and textbook routes remain separate FastAPI modules even though they share course data."
+        "Conversation keys use verified identity, not a client-supplied user ID. Account or course changes clear the chat and discard late responses.",
+        "History has a 30-minute idle expiry and bounded session/message counts. It remains process-local, not shared durable storage.",
+        "A versioned synthetic dataset measures recall@k and reciprocal rank offline. Missing rankings fail the check rather than quietly improving the score."
       ],
-      "outcomeLabel": "Scope",
-      "outcome": "Microeconomics and Macroeconomics have the most complete material. Science course shells remain visible but are described as partial rather than overstated as finished."
+      "outcomeLabel": "Test coverage",
+      "outcome": "Eight tests cover authentication contracts, session boundaries, expiry, request limits, and metric calculations. The small evaluation fixture makes ranking changes inspectable; live Atlas quality still needs measurement."
     },
-    "url": "https://github.com/andy98w/Academis",
+    "url": "https://github.com/andy98w/Academis/tree/codex/session-isolation",
     "action": "View source"
   },
   {
@@ -267,7 +269,8 @@
     "poster": "filmvault-demo.jpg",
     "videoAlt": "FilmVault demo showing live movie data, people browsing, member picks, ratings, and saved collections",
     "summary": "Films, television, ratings, and saved collections\u2014with live catalog data from TMDB.",
-    "detail": "I built the original FilmVault before using generative-AI coding tools, and have since revisited the interface and local setup. TMDB supplies catalog data; the app owns accounts, ratings, and collections.",
+    "detail": "I built the original FilmVault before adopting AI coding tools and have since updated the interface, local setup, and API failure handling. TMDB supplies the catalog; FilmVault owns accounts, ratings, and collections. The newer shared catalog client handles slow responses, rate limits, and temporary outages.",
+    "note": "The catalog-resilience upgrade is tested on codex/catalog-resilience, not production-deployed. The video shows the local app; Terraform documents the original OCI design.",
     "bullets": [
       "Express combines TMDB search and recommendations with member-owned data.",
       "Registration, email verification, password recovery, and JWT authorization.",
@@ -277,7 +280,7 @@
     "ownership": {
       "role": "Solo full-stack engineer",
       "scope": "React client, Express API, member data, TMDB integration, and original OCI design",
-      "status": "Recorded local demo; historical cloud design"
+      "status": "Recorded local demo; API resilience tested on a feature branch"
     },
     "architecture": {
       "diagram": "architecture-filmvault.svg",
@@ -285,15 +288,38 @@
       "caption": "Catalog metadata stays external; FilmVault owns the social layer around it.",
       "how": "The React client uses one Express API for searches, people, authentication, profiles, ratings, and collections. The API enriches member-owned records with TMDB movie and television metadata, sends account email, and can process profile images before writing them to OCI Object Storage.",
       "decisions": [
-        "TMDB remains the catalog source while the application database owns users, ratings, and saved collections.",
-        "Authentication and admin checks live in API middleware rather than being inferred from client state.",
-        "The current SQLite demo path improves repeatability; the original OCI design retains MySQL and broader infrastructure."
+        "Only public catalog GET requests use the bounded cache. In-flight requests coalesce, and cache keys include the query and authentication context.",
+        "A five-second deadline, response-size cap, and at most two attempts bound upstream work. Eligible transient failures can return stale data with explicit response headers; authentication errors cannot.",
+        "Caching is process-local, not shared across replicas. SQLite keeps local demos repeatable; the original deployment design uses MySQL and OCI."
       ],
-      "outcomeLabel": "Tradeoff",
-      "outcome": "The local demo is cheap and reproducible, while the checked-in OCI design shows the original production boundary. That history also leaves dependency upgrades and fresh deployment validation as explicit maintenance work."
+      "outcomeLabel": "Failure testing",
+      "outcome": "Six HTTP-fixture tests exercise coalescing, retry limits, stale responses, credential changes, malformed payloads, and slow streams. These validate failure behavior, not production throughput."
     },
-    "url": "https://github.com/andy98w/FilmVault",
+    "url": "https://github.com/andy98w/FilmVault/tree/codex/catalog-resilience",
     "action": "View source"
+  },
+  {
+    "id": "animalcalendar",
+    "name": "AnimalCalendar",
+    "category": "Application correctness",
+    "tags": ["Angular", "Firebase", "TypeScript"],
+    "icon": "calendar-days.svg",
+    "summary": "A personal calendar revisited with owner-only access, conflict-aware edits, and daylight-saving tests.",
+    "detail": "One of my earlier projects: an animal-themed calendar with Google and email sign-in, draggable events, and a month view. I returned to the data layer to make edits persist safely and stop one account from accessing another account’s events.",
+    "bullets": [
+      "Authenticated Firebase operations and owner-scoped rules reject anonymous and cross-account reads and writes.",
+      "Version-checked transactions detect competing edits. Deletion tombstones prevent an older client from restoring a removed event.",
+      "Changes persist before the interface updates; conflicts surface with a reload path instead of silently overwriting data.",
+      "Eight date and emulator tests cover daylight-saving transitions, authorization, validation, concurrent edits, and deletion behavior."
+    ],
+    "note": "Implemented and tested on codex/calendar-correctness; the new rules are not deployed. Dates display in the browser’s local timezone; recurrence and all-day events are not supported. Angular and dependency upgrades remain before a public relaunch.",
+    "ownership": {
+      "role": "Solo builder",
+      "scope": "Calendar interface, authentication, event persistence, security rules, and emulator tests",
+      "status": "Earlier project; correctness upgrade tested on a feature branch"
+    },
+    "url": "https://github.com/andy98w/AnimalCalendar/tree/codex/calendar-correctness",
+    "action": "View implementation"
   },
   {
     "id": "summit",
