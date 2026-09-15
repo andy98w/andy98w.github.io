@@ -18,7 +18,7 @@ npm run build
 npm run preview
 ```
 
-Publish the contents of `dist/` to GitHub Pages. Both the homepage and the previous privacy page (`privacy.html`) are included. This change has not been pushed or deployed.
+Publish the contents of `dist/` to GitHub Pages. Both the homepage and the previous privacy page (`privacy.html`) are included. The repository also includes Vercel configuration for frame-asset caching.
 
 ## Content
 
@@ -34,8 +34,74 @@ Frames are requested around the current scroll position, with two in-flight requ
 
 ## Validation
 
-Production build and JavaScript syntax checks passed. Static checks verified local image/font references, unique IDs, navigation anchors, seven project dialogs, display-name consistency, and preservation of the privacy page. All seven architecture SVGs pass XML validation and include accessible titles and descriptions. Homepage assets returned HTTP 200 from the development server. Scene geometry checks and 2,001 camera-path samples pass through the front and side openings without wall collisions. Local browser checks passed for forward and reverse frame navigation, pause/resume, home and Projects anchor jumps, and the final desk frame. No console errors were observed. Continuous FPS, slow-network performance, and mobile/reduced-motion browser coverage remain unmeasured.
+Production build and JavaScript syntax checks passed. Static checks verified local image/font references, unique IDs, navigation anchors, eight project dialogs, display-name consistency, and preservation of the privacy page. All seven architecture SVGs pass XML validation and include accessible titles and descriptions. Homepage assets returned HTTP 200 from the development server. Scene geometry checks and 2,001 camera-path samples pass through the front and side openings without wall collisions. Local browser checks passed for forward and reverse frame navigation, pause/resume, home and Projects anchor jumps, and the final desk frame. No console errors were observed. Continuous FPS, slow-network performance, and mobile/reduced-motion browser coverage remain unmeasured.
 
 See `ASSETS.md` for image sources and licenses.
 
-Project copy was revised using Andy’s PORTFOLIO_PROJECTS.md: three featured projects, four compact cards, and earlier work/coursework links. Illuma remains based on the previously supplied résumé. targetbot is not presented because the notes report no source history.
+Project copy was revised using Andy’s PORTFOLIO_PROJECTS.md: three featured projects, five compact cards, and earlier work/coursework links. Project details include the September 14 engineering updates; deployed work, feature branches, and controlled measurements are identified separately. targetbot is not presented because the notes report no source history.
+
+## Project overview — September 14, 2026
+
+### [KubeVista](https://github.com/andy98w/Kubernetes-Dashboard)
+
+A Kubernetes console for investigating failed workloads, reviewing a fix, and checking recovery. Built around an EKS platform I deployed on AWS.
+
+I built the Go API, React console, and AWS platform around them. The console connects Deployments, ReplicaSets, Pods, and events so an investigation can lead into a reviewed restart, scale, or rollback. Recovery checks look at the rollout—not just whether Kubernetes accepted the request.
+
+**Status:** Incident and blue-green release labs merged; AWS environment retired.
+
+### [Illuma](https://www.illuma.me/)
+
+A college admissions platform for researching schools, reviewing essays, and building a college list.
+
+I founded Illuma to bring college research, planning, and essay feedback into one workspace. I built the platform and its typed AI tools, then traced a slow streaming workflow to database writes that were making the model wait on progress updates.
+
+**Status:** Live product.
+
+### [Ledgly](https://github.com/andy98w/Ledgly)
+
+A shared ledger that helps club treasurers match payment emails to dues. Fewer spreadsheet detective stories.
+
+A club ledger should not create a second payment because someone clicked twice. I built the financial model and reconciliation workflow, then added idempotent writes, concurrency-safe allocations, durable email jobs, and recovery tests for the less cooperative days.
+
+**Status:** Reliability changes deployed; background workers separately controlled.
+
+### [Sizzle](https://github.com/andy98w/Sizzle/tree/codex/cooking-performance)
+
+Recipes with an interactive kitchen counter. The ingredients have actual physics.
+
+A dish or a few ingredients become a saved recipe and an illustrated cooking view. I built the generation pipeline and physics counter, then separated frame-by-frame movement from React rendering so the playful part does not keep rerendering the app.
+
+**Status:** Performance and accessibility upgrade tested on a feature branch.
+
+### [Academis](https://github.com/andy98w/Academis/tree/codex/retrieval-provenance)
+
+An AP study workspace that brings textbook retrieval, tutoring, quizzes, and graphs together.
+
+I built Academis around course documents so tutoring has something concrete to refer to. The latest work tracks where each passage came from, keeps retrieval within the selected course and document version, and declines to answer when usable evidence is missing.
+
+**Status:** Versioned retrieval and abstention tested on a feature branch.
+
+### [FilmVault](https://github.com/andy98w/FilmVault)
+
+Films, television, ratings, and saved collections—with live catalog data from TMDB.
+
+TMDB owns the movie catalog; FilmVault owns your ratings and collection. I revisited this earlier project to handle upstream outages and stop loading an entire collection just to show its first page. The updated client searches and sorts on the server, with bounded cursor pages.
+
+**Status:** Catalog resilience and pagination merged; not currently deployed.
+
+### [AnimalCalendar](https://github.com/andy98w/AnimalCalendar/tree/codex/offline-conflicts)
+
+An animal-themed calendar with offline drafts and a plan for when two edits disagree.
+
+One of my earlier projects, revisited at the point where calendars get awkward: no connection, another tab, or an event edited elsewhere. Drafts stay in the browser until they can sync, and conflicting edits stay available for review instead of silently replacing newer data.
+
+**Status:** Offline editing and conflict handling tested on a feature branch.
+
+### [Summit Tutoring Center](https://github.com/andy98w/summitwebsite)
+
+A working website for a tutoring center, with schedules the staff can update themselves.
+
+I built this for a tutoring business owned by family friends. It covers classes, staff, counseling, and inquiries, and fits the hosting setup they already had.
+
+**Status:** Live client website.

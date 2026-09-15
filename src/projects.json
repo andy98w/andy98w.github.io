@@ -1,8 +1,8 @@
 [
   {
     "id": "kubevista",
-    "dates": "Jul–Aug 2026",
-    "dateNote": "Project dates from LinkedIn. Incident-response and guarded-operation updates: September 2026.",
+    "dates": "August 2026–present",
+    "dateNote": "AWS lab and subsequent incident-response and release-testing work: 2026.",
     "name": "KubeVista",
     "category": "Cloud infrastructure",
     "tags": [
@@ -22,11 +22,11 @@
       "Production execution verifies the load balancer's signed identity claims and records an audit receipt.",
       "All 896 requests returned HTTP 200 during a 45-second AWS pod-loss test; the replacement became Ready in two seconds."
     ],
-    "note": "The August AWS deployment used the read-only version and has been torn down. Guarded operations and the incident lab were added afterward and tested locally; the AWS traffic result does not measure those newer features.",
+    "note": "The original AWS lab has been torn down. Guarded operations, incident recovery, and blue-green release checks were tested separately in disposable kind clusters and merged into main.",
     "ownership": {
       "role": "Solo builder",
       "scope": "Product, Go API, React interface, AWS platform, delivery, security boundaries, and operations",
-      "status": "Guarded operations tested locally; paid AWS environment retired"
+      "status": "Incident and blue-green release labs merged; AWS environment retired"
     },
     "architecture": {
       "diagram": "architecture-kubevista.svg",
@@ -36,7 +36,8 @@
       "decisions": [
         "The browser never submits YAML. Restart, scale, and rollback are typed operations; rollback pins the reviewed template from an owned ReplicaSet.",
         "Review plans expire after five minutes, work once, and are bound to the request and Kubernetes resource version to prevent edits or replay.",
-        "Recovery requires the expected controller generation and updated/available replicas. A local kind lab exercises probe, crash-loop, image-pull, memory, and scheduling failures. Plans and receipts remain process-local."
+        "Recovery requires the expected controller generation and updated/available replicas. A local kind lab exercises probe, crash-loop, image-pull, memory, and scheduling failures. Plans and receipts remain process-local.",
+        "A blue-green release lab validates a candidate before switching Service traffic, checks latency and errors, and rolls back without overwriting a concurrent Service edit."
       ],
       "caseStudy": {
         "title": "How a change gets through",
@@ -79,11 +80,15 @@
           {
             "label": "Live AWS evidence",
             "url": "https://github.com/andy98w/Kubernetes-Dashboard/blob/main/docs/evidence/live-eks-2026-08-31.md"
+          },
+          {
+            "label": "Release lab",
+            "url": "https://github.com/andy98w/Kubernetes-Dashboard/pull/1"
           }
         ]
       },
-      "outcomeLabel": "Live test",
-      "outcome": "Twelve Argo CD applications were Synced and Healthy, and all 896 requests returned HTTP 200 while an API pod was replaced. The paid AWS environment was then torn down and checked for leftovers."
+      "outcomeLabel": "Controlled lab results",
+      "outcome": "All 896 AWS test requests returned HTTP 200 while an API pod was replaced; its replacement became Ready within two seconds. Separate kind labs exercise five failure classes and guarded blue-green releases, with 20 desktop/mobile browser tests covering the console."
     },
     "url": "https://github.com/andy98w/Kubernetes-Dashboard",
     "action": "View source",
@@ -91,29 +96,29 @@
   },
   {
     "id": "illuma",
-    "dates": "May–Aug 2026",
+    "dates": "June 2026–present",
     "name": "Illuma",
     "category": "AI & education",
     "tags": [
-      "Multi-agent AI",
-      "Python",
-      "XGBoost"
+      "Next.js",
+      "FastAPI",
+      "PostgreSQL"
     ],
     "image": "illuma-homepage.webp",
     "alt": "Illuma college admissions platform homepage",
     "icon": "illuma-logo.png",
     "summary": "A college admissions platform for researching schools, reviewing essays, and building a college list.",
-    "detail": "I founded Illuma and built its AI tools and admissions probability model. The tools share state and validate their outputs before passing results to the next step.",
+    "detail": "I founded Illuma to bring college research, planning, and essay feedback into one workspace. I built the platform and its typed AI tools, then traced a slow streaming workflow to database writes that were making the model wait on progress updates.",
     "bullets": [
       "39 typed tools with shared state and deterministic validation.",
       "Admissions modeling across 130 universities.",
       "79,000 applicant outcomes underpin the platform.",
       "Grew to more than 5,000 users."
     ],
-    "note": "Product figures are from my September 2026 r\u00e9sum\u00e9.",
+    "note": "The platform has 39 typed tools and admissions modeling across 130 universities. Product figures in my September 2026 résumé: 5,000+ users, $10K+ revenue, and 4M+ organic social views.",
     "ownership": {
       "role": "Founder and lead engineer",
-      "scope": "Product direction, agent system, admissions model, and platform implementation",
+      "scope": "Product, typed AI tools, admissions model, backend performance, and platform implementation",
       "status": "Live product"
     },
     "architecture": {
@@ -124,10 +129,11 @@
       "decisions": [
         "Typed tool inputs and outputs make handoffs inspectable and reject malformed results early.",
         "Shared state keeps recommendations consistent across research, essays, and the evolving college list.",
-        "Admissions prediction is kept as a separate data pipeline rather than hidden inside an unconstrained language-model answer."
+        "Admissions prediction is kept as a separate data pipeline rather than hidden inside an unconstrained language-model answer.",
+        "Progress updates are coalesced in a background writer. Conditional database updates protect completed results from late progress writes, while final results are saved separately."
       ],
-      "outcomeLabel": "Scale",
-      "outcome": "The product grew to more than 5,000 users, with 39 typed tools and admissions modeling across 130 universities using 79,000 applicant outcomes."
+      "outcomeLabel": "Measured on staging",
+      "outcome": "Progress-callback overhead fell from 318 seconds to 23 milliseconds in a before/after staging comparison. The fix is deployed; these timings describe that sample, not a production latency guarantee."
     },
     "url": "https://www.illuma.me/",
     "action": "Visit site",
@@ -137,7 +143,7 @@
   {
     "id": "ledgly",
     "dates": "Mar–Jul 2026",
-    "dateNote": "Original project dates. Payment-reliability updates: September 2026.",
+    "dateNote": "Original build: March–July 2026. Transaction and recovery improvements shipped September 2026.",
     "name": "Ledgly",
     "category": "Product engineering",
     "tags": [
@@ -149,33 +155,33 @@
     "alt": "Ledgly financial dashboard with charges, payments, and membership balances",
     "icon": "ledgly-logo.webp",
     "summary": "A shared ledger that helps club treasurers match payment emails to dues. Fewer spreadsheet detective stories.",
-    "detail": "I built the ledger, payment-email matching, permissions, and review workflow. The latest work tackles what happens when requests arrive twice or two treasurers allocate the same payment: idempotent creation, transactional audit records, and concurrency checks backed by PostgreSQL tests.",
+    "detail": "A club ledger should not create a second payment because someone clicked twice. I built the financial model and reconciliation workflow, then added idempotent writes, concurrency-safe allocations, durable email jobs, and recovery tests for the less cooperative days.",
     "bullets": [
       "Gmail ingestion matches payment notices to members and records confidence for review.",
       "Organization-scoped roles are enforced by the API.",
       "The assistant proposes financial changes for confirmation before executing them.",
       "Before-and-after audit records support batch undo and redo."
     ],
-    "note": "The payment-reliability work is implemented and tested on codex/payment-reliability, not deployed to the public app. Ledgly records payments; it does not move money.",
+    "note": "The reliability changes are merged and deployed. Gmail ingestion and notification delivery have separate activation flags; deployment does not mean those workers are enabled. Ledgly records payments; it does not move money.",
     "ownership": {
       "role": "Solo full-stack engineer",
       "scope": "Architecture, ledger model, reconciliation, permissions, and audit workflow",
-      "status": "Public deployment protected; reliability upgrade tested on a feature branch"
+      "status": "Reliability changes deployed; background workers separately controlled"
     },
     "architecture": {
       "diagram": "architecture-ledgly.svg",
       "alt": "Ledgly architecture showing the Next.js interface, NestJS API, PostgreSQL ledger, Gmail ingestion, and a review gate before financial records are changed",
       "caption": "Incoming payment email becomes a proposed ledger match, not an automatic financial fact.",
-      "how": "The Next.js client calls an organization-scoped NestJS API backed by Prisma and PostgreSQL. A Gmail worker reads payment notices, extracts candidate transactions, and proposes member matches with confidence. Treasurers review ambiguous matches before payments are allocated to charges; the API records the before-and-after state in the audit log.",
+      "how": "The Next.js interface calls an organization-scoped NestJS API backed by Prisma and PostgreSQL. Durable Gmail jobs discover and process payment notices, with sender matching and confidence scores for review. Imports commit atomically. A transactional outbox records notification work alongside database changes, then retries delivery per destination.",
       "decisions": [
         "Amounts use integer cents. Serializable allocation transactions and bounded retries prevent competing requests from overallocating a payment or charge.",
         "An organization-scoped idempotency key binds to the request fingerprint. The payment, audit entry, and replay response commit together; changed-payload reuse is rejected.",
-        "Gmail matches and AI financial changes retain review gates. The new keyed creation path does not allocate funds or send notifications, keeping its transaction boundary explicit."
+        "Durable ingestion jobs and notification outbox entries survive process restarts. Replay is audited, and ambiguous payment matches and AI financial writes still require review."
       ],
-      "outcomeLabel": "Verified locally and in CI",
-      "outcome": "Six PostgreSQL integration tests cover replay, tenant boundaries, competing allocations, and rollback. Eight concurrent same-key requests produce one payment and one audit entry—not an exactly-once guarantee for email or external systems."
+      "outcomeLabel": "Recovery testing",
+      "outcome": "Tests terminate a worker after payment commit, restart the database, and restore a backup before redelivery, checking that the payment is not duplicated. External notification delivery can still repeat after an ambiguous provider acknowledgment."
     },
-    "url": "https://github.com/andy98w/Ledgly/tree/codex/payment-reliability",
+    "url": "https://github.com/andy98w/Ledgly",
     "action": "View source",
     "featured": true
   },
@@ -224,9 +230,14 @@
   {
     "id": "academis",
     "detailLayout": "flow",
-    "flow": ["Textbook PDFs", "Chunks & embeddings", "Retrieve passages", "Generate answer"],
+    "flow": [
+      "Versioned PDFs",
+      "Course-scoped chunks",
+      "Retrieve & validate",
+      "Answer or abstain"
+    ],
     "dates": "Apr–Sep 2025",
-    "dateNote": "Original project dates. Session-isolation and evaluation updates: September 2026.",
+    "dateNote": "Original project dates. Session isolation and versioned retrieval improvements: September 2026.",
     "name": "Academis",
     "category": "AI & education",
     "tags": [
@@ -239,8 +250,8 @@
     "poster": "academis-demo.jpg",
     "videoAlt": "Academis demo moving from the AP Economics study desk into the Biology course workspace",
     "summary": "An AP study workspace that brings textbook retrieval, tutoring, quizzes, and graphs together.",
-    "detail": "I built PDF ingestion and retrieval alongside the study interface. The latest work isolates each learner’s conversation and adds a small retrieval-evaluation harness, so access boundaries and ranking calculations can be tested without paid model calls.",
-    "note": "Session isolation and evaluation are tested on codex/session-isolation, not production-deployed. Economics is the most complete content; science courses remain partial. The evaluation harness does not establish answer accuracy or a retrieval-quality improvement.",
+    "detail": "I built Academis around course documents so tutoring has something concrete to refer to. The latest work tracks where each passage came from, keeps retrieval within the selected course and document version, and declines to answer when usable evidence is missing.",
+    "note": "Versioned retrieval and source references are implemented and tested on codex/retrieval-provenance. Live Atlas ingestion and retrieval-threshold calibration remain before rollout. Economics has the most complete content; science courses remain partial.",
     "bullets": [
       "PDF extraction, chunking, and embeddings feed MongoDB Atlas Vector Search.",
       "FastAPI separates tutoring, retrieval, quiz generation, and graph generation.",
@@ -249,22 +260,22 @@
     "ownership": {
       "role": "Solo builder",
       "scope": "Document ingestion, retrieval, tutoring API, and study interface",
-      "status": "Local demo; session isolation and evaluation tested on a feature branch"
+      "status": "Versioned retrieval and abstention tested on a feature branch"
     },
     "architecture": {
       "diagram": "architecture-academis.svg",
       "alt": "Academis retrieval architecture showing PDF ingestion into subject-tagged chunks and MongoDB Atlas Vector Search, then a student question retrieving context for answer generation",
-      "caption": "PDF ingestion feeds Atlas retrieval. Subject selection chooses the collection; microeconomics and macroeconomics share an economics collection.",
-      "how": "The ingestion pipeline extracts PDFs, creates overlapping chunks and embeddings, and stores them in MongoDB Atlas Vector Search. FastAPI retrieves passages for tutoring. The newer ask route verifies a Firebase ID token and scopes chat history to the verified user, subject, and session. Retrieval can fall back to an ungrounded answer, so not every response is textbook-backed.",
+      "caption": "Versioned course documents feed scoped retrieval, with source references and an explicit no-evidence path.",
+      "how": "PDFs become overlapping chunks with document hashes, page numbers, course and corpus versions, and embedding metadata. Atlas queries filter that scope before retrieval; the API validates returned passages again. Verified user, course, and session identity isolate conversation history. Missing evidence or retrieval failure produces an abstention rather than an unsupported answer.",
       "decisions": [
-        "Conversation keys use verified identity, not a client-supplied user ID. Account or course changes clear the chat and discard late responses.",
-        "History has a 30-minute idle expiry and bounded session/message counts. It remains process-local, not shared durable storage.",
-        "A versioned synthetic dataset measures recall@k and reciprocal rank offline. Missing rankings fail the check rather than quietly improving the score."
+        "Deterministic chunk identifiers and content hashes make ingestion and source provenance inspectable across document versions.",
+        "Course, corpus version, schema, and embedding-model filters prevent unrelated material from entering the answer context.",
+        "Server-generated references include source title, page, version, and chunk identifier. These identify retrieved evidence; they do not prove every generated sentence is supported."
       ],
-      "outcomeLabel": "Test coverage",
-      "outcome": "Eight tests cover authentication contracts, session boundaries, expiry, request limits, and metric calculations. The small evaluation fixture makes ranking changes inspectable; live Atlas quality still needs measurement."
+      "outcomeLabel": "Policy and contract tests",
+      "outcome": "Fourteen backend tests and client type checks passed. A small synthetic evaluation checks course/version boundaries and abstention; it does not measure live Atlas retrieval quality or real-world answer accuracy."
     },
-    "url": "https://github.com/andy98w/Academis/tree/codex/session-isolation",
+    "url": "https://github.com/andy98w/Academis/tree/codex/retrieval-provenance",
     "action": "View source"
   },
   {
@@ -278,15 +289,15 @@
     "tags": [
       "React",
       "Express",
-      "OCI"
+      "MySQL"
     ],
     "icon": "filmvault.webp",
     "video": "filmvault-demo.mp4",
     "poster": "filmvault-demo.jpg",
     "videoAlt": "FilmVault demo showing live movie data, people browsing, member picks, ratings, and saved collections",
-    "summary": "Films, television, ratings, and saved collections\u2014with live catalog data from TMDB.",
-    "detail": "I built the original FilmVault before adopting AI coding tools and have since updated the interface, local setup, and API failure handling. TMDB supplies the catalog; FilmVault owns accounts, ratings, and collections. The newer shared catalog client handles slow responses, rate limits, and temporary outages.",
-    "note": "The catalog-resilience upgrade is tested on codex/catalog-resilience, not production-deployed. The video shows the local app; Terraform documents the original OCI design.",
+    "summary": "Films, television, ratings, and saved collections—with live catalog data from TMDB.",
+    "detail": "TMDB owns the movie catalog; FilmVault owns your ratings and collection. I revisited this earlier project to handle upstream outages and stop loading an entire collection just to show its first page. The updated client searches and sorts on the server, with bounded cursor pages.",
+    "note": "Catalog resilience and pagination are merged into main. FilmVault is not currently deployed; the video is a local demo. Benchmark figures come from synthetic MySQL data, not production traffic.",
     "bullets": [
       "Express combines TMDB search and recommendations with member-owned data.",
       "Registration, email verification, password recovery, and JWT authorization.",
@@ -296,48 +307,52 @@
     "ownership": {
       "role": "Solo full-stack engineer",
       "scope": "React client, Express API, member data, TMDB integration, and original OCI design",
-      "status": "Recorded local demo; API resilience tested on a feature branch"
+      "status": "Catalog resilience and pagination merged; not currently deployed"
     },
     "architecture": {
       "diagram": "architecture-filmvault.svg",
       "alt": "FilmVault architecture showing a React client calling an Express API that combines TMDB catalog data with member accounts, ratings, collections, email, and OCI storage",
       "caption": "Catalog metadata stays external; FilmVault owns the social layer around it.",
-      "how": "The React client uses one Express API for searches, people, authentication, profiles, ratings, and collections. The API enriches member-owned records with TMDB movie and television metadata, sends account email, and can process profile images before writing them to OCI Object Storage.",
+      "how": "React calls an Express API for catalog browsing and member-owned collections. A shared TMDB client bounds upstream requests and can explicitly return stale catalog data during eligible failures. Collection queries use validated cursors, whole-collection search, stable sort tie-breakers, and authenticated ownership checks.",
       "decisions": [
-        "Only public catalog GET requests use the bounded cache. In-flight requests coalesce, and cache keys include the query and authentication context.",
-        "A five-second deadline, response-size cap, and at most two attempts bound upstream work. Eligible transient failures can return stale data with explicit response headers; authentication errors cannot.",
-        "Caching is process-local, not shared across replicas. SQLite keeps local demos repeatable; the original deployment design uses MySQL and OCI."
+        "Only public catalog reads enter the bounded, process-local cache. Concurrent requests coalesce; retries share a deadline and stale responses are explicitly marked.",
+        "The updated client requests cursor pagination explicitly, preserving older API formats. Search is debounced, obsolete requests are canceled, and late results cannot replace the current view.",
+        "MySQL query plans guided the pagination work. Deep pages can still scan many index entries; cursor pagination is not a constant-work guarantee."
       ],
-      "outcomeLabel": "Failure testing",
-      "outcome": "Six HTTP-fixture tests exercise coalescing, retry limits, stale responses, credential changes, malformed payloads, and slow streams. These validate failure behavior, not production throughput."
+      "outcomeLabel": "Synthetic MySQL benchmark",
+      "outcome": "For a 10,000-item collection, warm median database/response-construction time was 33.62 ms for a full read and 0.56 ms for the first 15 items. Initial JSON fell from 6.27 MB to 9.55 KB. MySQL, SQLite, API, and client tests cover the contracts; these are not end-to-end production timings."
     },
-    "url": "https://github.com/andy98w/FilmVault/tree/codex/catalog-resilience",
+    "url": "https://github.com/andy98w/FilmVault",
     "action": "View source"
   },
   {
     "id": "animalcalendar",
     "dates": "Jun–Jul 2023",
     "withoutAi": true,
-    "dateNote": "Original build without AI. Firebase correctness and security-rule updates: September 2026, with AI assistance.",
+    "dateNote": "Original build without AI. Offline editing and Firebase correctness updates: September 2026, with AI assistance.",
     "name": "AnimalCalendar",
     "category": "Application correctness",
-    "tags": ["Angular", "Firebase", "TypeScript"],
-    "icon": "calendar-days.svg",
-    "summary": "A personal calendar revisited with owner-only access, conflict-aware edits, and daylight-saving tests.",
-    "detail": "One of my earlier projects: an animal-themed calendar with Google and email sign-in, draggable events, and a month view. I returned to the data layer to make edits persist safely and stop one account from accessing another account’s events.",
-    "bullets": [
-      "Authenticated Firebase operations and owner-scoped rules reject anonymous and cross-account reads and writes.",
-      "Version-checked transactions detect competing edits. Deletion tombstones prevent an older client from restoring a removed event.",
-      "Changes persist before the interface updates; conflicts surface with a reload path instead of silently overwriting data.",
-      "Eight date and emulator tests cover daylight-saving transitions, authorization, validation, concurrent edits, and deletion behavior."
+    "tags": [
+      "Angular",
+      "Firebase",
+      "TypeScript"
     ],
-    "note": "Implemented and tested on codex/calendar-correctness; the new rules are not deployed. Dates display in the browser’s local timezone; recurrence and all-day events are not supported. Angular and dependency upgrades remain before a public relaunch.",
+    "icon": "calendar-days.svg",
+    "summary": "An animal-themed calendar with offline drafts and a plan for when two edits disagree.",
+    "detail": "One of my earlier projects, revisited at the point where calendars get awkward: no connection, another tab, or an event edited elsewhere. Drafts stay in the browser until they can sync, and conflicting edits stay available for review instead of silently replacing newer data.",
+    "bullets": [
+      "Account-scoped IndexedDB drafts and snapshots survive reloads and overlay pending edits on the calendar.",
+      "Reconnection checks the original event version. Concurrent edits and deletion tombstones trigger an explicit conflict instead of restoring stale data.",
+      "Operation identifiers recognize the last accepted write after an acknowledgment is lost. Conditional queue removal protects newer drafts from older completions.",
+      "Two Firebase emulator clients exercise offline edits, competing changes, deletion conflicts, and replay. Fifteen date, queue, and emulator tests passed."
+    ],
+    "note": "Implemented and tested on codex/offline-conflicts; not deployed. Browser storage can be cleared or evicted, and conflicting fields are not automatically merged. Firebase rules must be updated before the new client is released.",
     "ownership": {
       "role": "Solo builder",
       "scope": "Calendar interface, authentication, event persistence, security rules, and emulator tests",
-      "status": "Earlier project; correctness upgrade tested on a feature branch"
+      "status": "Offline editing and conflict handling tested on a feature branch"
     },
-    "url": "https://github.com/andy98w/AnimalCalendar/tree/codex/calendar-correctness",
+    "url": "https://github.com/andy98w/AnimalCalendar/tree/codex/offline-conflicts",
     "action": "View implementation"
   },
   {
@@ -359,7 +374,7 @@
       "Staff maintain schedules, seminars, and posts through published Google Sheets.",
       "CSV parsing handles quoted and multiline fields, with caching and stale-data fallback.",
       "The inquiry flow uses Web3Forms when configured and falls back to an email draft.",
-      "Deployed to the business\u2019s existing DreamHost account."
+      "Deployed to the business’s existing DreamHost account."
     ],
     "ownership": {
       "role": "Designer and developer",
