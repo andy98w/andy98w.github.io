@@ -131,6 +131,8 @@ export class FrameJourney {
   }
   setProgress(value) {
     clearTimeout(this.snapTimer);
+    cancelAnimationFrame(this.snapRequest);
+    this.settleTarget = null;
     if (this.paused || this.disposed || document.hidden) return;
     const previous = this.target;
     this.target = Math.round(Math.max(0, Math.min(1, value)) * (this.count - 1));
@@ -141,27 +143,41 @@ export class FrameJourney {
       this.still.classList.remove('is-visible');
     }
     if (this.paused || this.disposed || document.hidden) return;
-    this.draw();
+    this.scheduleDraw();
     this.pump();
     // Only settle within eighteen source frames; never pull the camera across a room.
     const nearest = [...this.holds.keys()].sort((a, b) => Math.abs(a - this.target) - Math.abs(b - this.target))[0];
     this.planWarming(nearest);
     if (Math.abs(nearest - this.target) <= 18 && nearest !== this.target) {
-      this.snapTimer = setTimeout(() => this.stepToHold(nearest), 180);
+      this.snapTimer = setTimeout(() => this.stepToHold(nearest), 100);
     }
   }
   stepToHold(index) {
     if (this.paused || this.disposed || document.hidden) return;
-    if (this.displayed === this.target && this.target !== index) {
-      this.direction = Math.sign(index - this.target);
-      this.target += this.direction;
-    }
-    this.draw();
+    const origin = this.target;
+    const started = performance.now();
+    this.settleTarget = index;
+    this.direction = Math.sign(index - origin) || this.direction;
+    // Request the destination now; intermediate downloads cannot gate arrival.
     this.pump();
-    if (this.failed.has(this.target)) return;
-    if (this.target !== index || this.displayed !== index)
-      this.snapTimer = setTimeout(() => this.stepToHold(index), 24);
-    else this.settleStill();
+    const advance = (now) => {
+      this.snapRequest = 0;
+      if (this.paused || this.disposed || document.hidden) {
+        this.settleTarget = null;
+        return;
+      }
+      const progress = Math.min(1, (now - started) / 160);
+      const eased = 1 - (1 - progress) ** 3;
+      this.target = Math.round(origin + (index - origin) * eased);
+      this.draw();
+      this.pump();
+      if (progress < 1) this.snapRequest = requestAnimationFrame(advance);
+      else {
+        this.settleTarget = null;
+        this.settleStill();
+      }
+    };
+    this.snapRequest = requestAnimationFrame(advance);
   }
   draw() {
     const available = [...this.cache.keys()].sort((a, b) => Math.abs(a - this.target) - Math.abs(b - this.target))[0];
@@ -186,31 +202,39 @@ export class FrameJourney {
   wantedFrames() {
     const direction = this.direction;
     const ahead = this.cacheLimit - 4;
-    return [this.target, this.target + direction, this.target - direction,
+    return [...new Set([this.settleTarget, this.target, this.target + direction, this.target - direction,
       ...Array.from({ length: ahead - 1 }, (_, i) => this.target + direction * (i + 2)),
-      this.target - direction * 2].filter(index => index >= 0 && index < this.count);
+      this.target - direction * 2])].filter(index => index != null && index >= 0 && index < this.count);
     }
   pump() {
     if (this.paused || this.disposed || document.hidden) return;
     const wanted = this.wantedFrames();
-    for (const [index, controller] of this.pending) {
-      if (!wanted.includes(index)) controller.abort();
+    // Keep nearby requests alive across scroll ticks. Reserve capacity for the
+    // visible destination only when all four slots are occupied by older work.
+    const urgent = this.settleTarget ?? this.target;
+    if (!this.cache.has(urgent) && !this.pending.has(urgent) &&
+        !this.failed.has(urgent) && this.pending.size >= 4) {
+      const victim = [...this.pending.keys()]
+        .sort((a, b) => Math.abs(b - urgent) - Math.abs(a - urgent))[0];
+      this.pending.get(victim).abort();
+      this.pending.delete(victim);
     }
     for (const index of wanted) {
       if (this.pending.size >= 4) break;
       if (this.cache.has(index) || this.pending.has(index) || this.failed.has(index)) continue;
       const controller = new AbortController();
       this.pending.set(index, controller);
-      fetch(this.url(index), { signal: controller.signal, cache: 'force-cache' })
+      fetch(this.url(index), { signal: controller.signal, cache: 'force-cache',
+        priority: index === urgent ? 'high' : 'low' })
         .then(response => { if (!response.ok) throw new Error('Frame unavailable'); return response.blob(); })
         .then(blob => {
           // Scroll jumps can make downloaded frames obsolete before decoding.
-          if (this.disposed || controller.signal.aborted || !this.wantedFrames().includes(index)) return null;
+          if (this.disposed || controller.signal.aborted || Math.abs(index - this.target) > this.cacheLimit && index !== this.settleTarget) return null;
           return createImageBitmap(blob);
         })
         .then(bitmap => {
           if (!bitmap) return;
-          if (this.disposed || controller.signal.aborted || Math.abs(index - this.target) > this.cacheLimit) {
+          if (this.disposed || controller.signal.aborted || (Math.abs(index - this.target) > this.cacheLimit && index !== this.settleTarget)) {
             bitmap.close(); return;
           }
           this.cache.set(index, bitmap);
@@ -225,13 +249,18 @@ export class FrameJourney {
           this.scheduleDraw();
         })
         .catch(error => { if (error.name !== 'AbortError') this.failed.add(index); })
-        .finally(() => { this.pending.delete(index); this.pump(); });
+        .finally(() => {
+          // An aborted request may finish after a newer request for this index.
+          if (this.pending.get(index) === controller) this.pending.delete(index);
+          this.pump();
+        });
     }
   }
   dispose() {
     this.disposed = true;
     this.stopWarming();
     cancelAnimationFrame(this.drawRequest);
+    cancelAnimationFrame(this.snapRequest);
     clearTimeout(this.snapTimer);
     clearTimeout(this.stillTimer);
     this.still.remove();
