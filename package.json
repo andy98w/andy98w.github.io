@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "node src/render-content.mjs && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "test:frames": "node --test tests/frame-journey.test.mjs"
   },
   "dependencies": {
     "gsap": "^3.13.0",
