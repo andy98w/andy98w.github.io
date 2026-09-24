@@ -209,15 +209,14 @@ export class FrameJourney {
   pump() {
     if (this.paused || this.disposed || document.hidden) return;
     const wanted = this.wantedFrames();
-    // Keep nearby requests alive across scroll ticks. Reserve capacity for the
-    // visible destination only when all four slots are occupied by older work.
+    // A changing scroll target must not repeatedly cancel all useful work.
+    // Let nearby downloads complete; only discard requests after a large jump.
     const urgent = this.settleTarget ?? this.target;
-    if (!this.cache.has(urgent) && !this.pending.has(urgent) &&
-        !this.failed.has(urgent) && this.pending.size >= 4) {
-      const victim = [...this.pending.keys()]
-        .sort((a, b) => Math.abs(b - urgent) - Math.abs(a - urgent))[0];
-      this.pending.get(victim).abort();
-      this.pending.delete(victim);
+    for (const [index, controller] of this.pending) {
+      if (Math.abs(index - urgent) > this.cacheLimit * 4) {
+        controller.abort();
+        this.pending.delete(index);
+      }
     }
     for (const index of wanted) {
       if (this.pending.size >= 4) break;

@@ -36,11 +36,11 @@ test('nearby in-flight requests survive when the target is already loading', () 
   const j = journey(); for (const i of [49,50,51,52]) j.pending.set(i,new AbortController());
   j.pump(); assert.equal([...j.pending.values()].some(c => c.signal.aborted), false);
 });
-test('a distant jump frees only one slot and prioritizes the destination', () => {
+test('a large jump discards distant work and prioritizes the destination', () => {
   const j = journey(); const old = [1,2,3,4].map(i => { const c=new AbortController(); j.pending.set(i,c); return c; });
   const requests=[]; globalThis.fetch = (url,options) => { requests.push({url,options}); return new Promise(()=>{}); };
-  j.pump(); assert.equal(old.filter(c=>c.signal.aborted).length,1);
-  assert.equal(requests[0].url,'50'); assert.equal(requests[0].options.priority,'high'); assert.equal(j.pending.size,4);
+  j.target=400; j.pump(); assert.equal(old.filter(c=>c.signal.aborted).length,4);
+  assert.equal(requests[0].url,'400'); assert.equal(requests[0].options.priority,'high'); assert.equal(j.pending.size,4);
 });
 test('late completion cannot delete a newer request for the same frame', async () => {
   const j = journey(); let reject; globalThis.fetch = () => new Promise((_,r) => { reject ??= r; });
@@ -63,4 +63,13 @@ test('disposing cancels settling, aborts requests, and releases decoded bitmaps'
   j.stepToHold(37);j.dispose();tick(performance.now()+200);
   assert.equal(j.target,50);assert.equal(closed,1);assert.equal(j.cache.size,0);
   assert.ok(controller.signal.aborted);assert.equal(raf.size,0);
+});
+
+test('continuous scrolling lets requests finish instead of starving the renderer', () => {
+  const j=journey(); const controllers=[49,50,51,52].map(i=>{
+    const c=new AbortController();j.pending.set(i,c);return c;
+  });
+  globalThis.fetch=()=>{throw new Error('No extra request should start while full');};
+  for(let target=53;target<=80;target++){j.target=target;j.pump();}
+  assert.ok(controllers.every(c=>!c.signal.aborted));assert.equal(j.pending.size,4);
 });
