@@ -99,7 +99,9 @@ function syncPause() {
   if (!quiet) updateCamera();
 }
 document.body.classList.add('world-ready', 'film-journey');
-import('./frame-journey.js').then(({ FrameJourney }) => {
+(new URLSearchParams(location.search).get('renderer') === 'video'
+  ? import('./video-journey.js').then(m => ({ FrameJourney: m.VideoJourney }))
+  : import('./frame-journey.js')).then(({ FrameJourney }) => {
   journey = new FrameJourney(host, [
     { path: '/assets/journey-frames/courtyard', count: 145 },
     { path: '/assets/journey-frames/approach', count: 36 },

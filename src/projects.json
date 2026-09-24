@@ -11,9 +11,9 @@
       "Kubernetes",
       "Terraform"
     ],
-    "image": "kubevista-dashboard.webp",
-    "alt": "KubeVista operations console showing its validated deployment snapshot",
-    "icon": "kubernetes.svg",
+    "image": "kubevista-station.png",
+    "alt": "KubeVista’s isometric cluster station showing robot workloads, service routing, telemetry, and cloud infrastructure",
+    "icon": "kubevista-bot.svg",
     "summary": "A Kubernetes console for investigating failed workloads, reviewing a fix, and checking recovery. Built around an EKS platform I deployed on AWS.",
     "detail": "I built the Go API, React console, and AWS platform around them. The console connects Deployments, ReplicaSets, Pods, and events so an investigation can lead into a reviewed restart, scale, or rollback. Recovery checks look at the rollout—not just whether Kubernetes accepted the request.",
     "bullets": [

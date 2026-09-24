@@ -1,7 +1,9 @@
 # Asset provenance
 
 - `villa.webp`: Original generated artwork based on the user-approved sunlit medieval inventor villa mockup. Built-in image generation; interface text was removed in an edit. Generated master is delivered separately as `outputs/villa-background.png` in the task workspace. Prompt: remove all text, controls, and banner lettering; extend the courtyard over the former lower UI strip; preserve architecture, quiet left wall, greenery, brass instruments, composition, and daylight.
-- `kubevista-dashboard.webp`: Screenshot of the actual public KubeVista frontend running locally in its supplied representative demo mode. Source: https://github.com/andy98w/Kubernetes-Dashboard . The demo is not represented as live production telemetry.
+- `kubevista-station.png`: User-supplied September 23, 2026 screenshot of KubeVista’s local fleet station. Illustrates the planned application topology, not live production telemetry.
+- `kubevista-bot.svg`: KubeVista’s original robot mark, copied from the app’s header/favicon asset.
+- `kubevista-dashboard.webp`: Previous dashboard screenshot, retained as an unused historical asset.
 - `illuma-homepage.webp`: Screenshot of https://www.illuma.me/ taken during this build.
 - `illuma-logo.png`: https://www.illuma.me/illuma-logo.png . Owner's product branding.
 - `ledgly-dashboard.webp`: Original screenshot in https://github.com/andy98w/Ledgly, `apps/web/public/screenshots/light/dashboard.png`.
