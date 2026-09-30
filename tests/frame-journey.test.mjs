@@ -73,3 +73,26 @@ test('continuous scrolling lets requests finish instead of starving the renderer
   for(let target=53;target<=80;target++){j.target=target;j.pump();}
   assert.ok(controllers.every(c=>!c.signal.aborted));assert.equal(j.pending.size,4);
 });
+
+ test('idle buffering covers a wider route, then fills nearby gaps in either direction', () => {
+  const j=journey();
+  for (const direction of [-1,1]) {
+    j.target=200;j.direction=direction;
+    const frames=j.warmingFrames();
+    assert.equal(frames[0],200+direction*8);
+    assert.ok(frames.includes(200+direction*96));
+    for(let step=1;step<=32;step++) assert.ok(frames.includes(200+direction*step));
+    assert.equal(new Set(frames).size,frames.length);
+    assert.ok(frames.length<=40);
+  }
+  for(const target of [0,422]) for(const direction of [-1,1]) {
+    j.target=target;j.direction=direction;
+    assert.ok(j.warmingFrames().every(i=>i>=0 && i<423));
+  }
+});
+test('idle buffering stops immediately when scrolling aborts speculative work', async () => {
+  const j=journey();j.canWarm=()=>true;let requests=0;
+  j.warmUrl=async()=>{requests++;j.warmController.abort();};
+  await j.warmStretch();
+  assert.equal(requests,1);assert.equal(j.warmController,null);
+});

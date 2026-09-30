@@ -92,6 +92,14 @@ export class FrameJourney {
     }
     if (!this.warmTimer && !this.warmController) this.warmTimer = setTimeout(() => this.warmStretch(), 900);
   }
+  warmingFrames() {
+    // Cover a wider stretch first, then fill nearby gaps. Keep compressed data
+    // in the HTTP cache; the decoded bitmap budget stays unchanged.
+    const offsets = [...Array.from({ length: 12 }, (_, i) => (i + 1) * 8),
+      ...Array.from({ length: 32 }, (_, i) => i + 1)];
+    return [...new Set(offsets.map(step => this.target + step * this.direction))]
+      .filter(index => index >= 0 && index < this.count);
+  }
   async warmStretch() {
     this.warmTimer = null;
     if (!this.canWarm()) return;
@@ -101,12 +109,11 @@ export class FrameJourney {
     }
     const controller = new AbortController();
     this.warmController = controller;
-    const origin = this.target, direction = this.direction;
+    const planned = this.warmingFrames();
     try {
       // One speculative request at a time; resume motion cancels this work.
-      for (let step = 1; step <= 32; step++) {
-        const index = origin + step * direction;
-        if (!this.canWarm() || controller.signal.aborted || index < 0 || index >= this.count) break;
+      for (const index of planned) {
+        if (!this.canWarm() || controller.signal.aborted) break;
         if (this.cache.has(index) || this.pending.has(index)) continue;
         await this.warmUrl(this.url(index), controller.signal);
       }
