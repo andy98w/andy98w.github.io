@@ -99,16 +99,30 @@ function syncPause() {
   if (!quiet) updateCamera();
 }
 document.body.classList.add('world-ready', 'film-journey');
-(new URLSearchParams(location.search).get('renderer') === 'video'
-  ? import('./video-journey.js').then(m => ({ FrameJourney: m.VideoJourney }))
-  : import('./frame-journey.js')).then(({ FrameJourney }) => {
-  journey = new FrameJourney(host, [
-    { path: '/assets/journey-frames/courtyard', count: 145 },
-    { path: '/assets/journey-frames/approach', count: 36 },
-    { path: '/assets/journey-frames/desk', count: 242 },
-  ]);
-  syncPause(); measure(); keepInitialHashSettled();
-}).catch(error => { console.warn('Keeping villa poster', error); toggle.hidden = true; });
+const segments = [
+  { path: '/assets/journey-frames/courtyard', count: 145 },
+  { path: '/assets/journey-frames/approach', count: 36 },
+  { path: '/assets/journey-frames/desk', count: 242 },
+];
+async function startJourney(useFrames = false) {
+  journey?.dispose();
+  journey = null;
+  try {
+    if (useFrames) {
+      const { FrameJourney } = await import('./frame-journey.js');
+      journey = new FrameJourney(host, segments);
+    } else {
+      const { VideoJourney } = await import('./video-journey.js');
+      journey = new VideoJourney(host, segments, undefined, () => startJourney(true));
+    }
+    syncPause(); measure(); keepInitialHashSettled();
+  } catch (error) {
+    if (!useFrames) return startJourney(true);
+    console.warn('Keeping villa poster', error);
+    toggle.hidden = true;
+  }
+}
+startJourney(new URLSearchParams(location.search).get('renderer') === 'frames');
 toggle.addEventListener('click', () => {
   paused = !paused;
   try { sessionStorage.setItem('andy-motion-paused', String(paused)); } catch {}
