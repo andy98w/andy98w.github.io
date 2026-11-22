@@ -58,3 +58,5 @@ The live `villa-workshop-trimmed.mp4` and `villa-workshop-trimmed-mobile.mp4` re
 ## Project architecture diagrams
 
 `architecture-*.svg` are original system diagrams drawn for this portfolio from the corresponding repositories and project documentation. They summarize implemented request paths and explicitly labeled deployment tradeoffs; they are not vendor reference diagrams.
+
+- `andy-studio-portrait.jpg`: Replacement About portrait supplied by Andy on November 21, 2026 as `Subtly Refined Studio Portrait.png`, optimized as a JPEG for the website.
